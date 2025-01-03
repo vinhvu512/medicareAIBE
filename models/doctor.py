@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, CheckConstraint
+from sqlalchemy import Column, Integer, String, ForeignKey, CheckConstraint, JSON
 from database.session import Base
 from sqlalchemy.orm import relationship
 
@@ -9,6 +9,8 @@ class Doctor(Base):
     doctor_specialty = Column(String(255), nullable=False)
     doctor_experience = Column(Integer, nullable=False, default=0)
     profile_image = Column(String(255))
+    # New column to store schedule as JSON
+    weekly_schedule = Column(JSON, default=dict)
 
     user = relationship(
         "User",
