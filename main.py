@@ -6,6 +6,9 @@ from apis.test_token.test_token_router import router as test_token_router
 from apis.user.user_router import router as user_router
 from apis.hospital.hospital_router import router as hospital_router
 from apis.appointments.appointments_router import router as appointments_router
+from apis.relationships.relationships_router import router as relationships_router
+from apis.doctor.doctor_router import router as doctor_router
+from apis.department.department_router import router as department_router
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -31,6 +34,9 @@ app.include_router(test_token_router, prefix="/api/auth", tags=["test_token"])
 app.include_router(user_router, prefix="/api/auth", tags=["user"])
 app.include_router(hospital_router, prefix="/api/hospital", tags=["hospitals"])
 app.include_router(appointments_router, prefix="/api", tags=["appointments"])
+app.include_router(relationships_router, prefix="/api/relationships", tags=["relationships"])
+app.include_router(doctor_router, prefix="/api/doctor", tags=["doctors"])
+app.include_router(department_router, prefix="/api/department", tags=["departments"])
 
 if __name__ == "__main__":
     import uvicorn

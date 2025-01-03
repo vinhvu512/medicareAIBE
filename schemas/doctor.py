@@ -1,9 +1,9 @@
-from pydantic import BaseModel, conint
+from pydantic import BaseModel, conint, Field
 from .user import User
 
 class DoctorBase(BaseModel):
     doctor_specialty: str
-    doctor_experience: conint(ge=0)
+    doctor_experience: int | None = 0
     profile_image: str | None = None
 
 class DoctorCreate(DoctorBase):

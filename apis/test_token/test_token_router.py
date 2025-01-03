@@ -12,10 +12,10 @@ async def test_token(current_user: User = Depends(get_current_user)):
     return {
         "message": "Token is valid",
         "user_data": {
-            "user_id": current_user.m_user_id,
-            "email": current_user.m_email,
-            "username": current_user.m_username,
-            "user_type": current_user.m_user_type,
-            "fullname": current_user.m_fullname
+            "user_id": current_user.user_id,
+            "email": current_user.email,
+            "username": current_user.username,
+            "user_type": current_user.user_type,
+            "fullname": current_user.fullname
         }
     }
