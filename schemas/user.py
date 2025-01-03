@@ -24,7 +24,7 @@ class UserBase(BaseModel):
     profile_image: str | None = None
 
 class UserCreate(UserBase):
-    password: str = "1234"
+    password: str
 
 class User(UserBase):
     user_id: int
