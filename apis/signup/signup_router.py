@@ -13,7 +13,7 @@ router = APIRouter()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-class UserRegister(BaseModel):
+class UserSignUp(BaseModel):
     username: str
     email: EmailStr
     password: str
@@ -27,8 +27,8 @@ class UserRegister(BaseModel):
     doctor_specialty: Optional[str] = None 
     doctor_experience: Optional[int] = None
 
-@router.post("/register")
-async def register(user_data: UserRegister, db: Session = Depends(get_db)):
+@router.post("/signup")
+async def signup(user_data: UserSignUp, db: Session = Depends(get_db)):
     # Check unique username
     if db.query(User).filter(User.m_username == user_data.username).first():
         raise HTTPException(
@@ -85,9 +85,11 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
         db.refresh(db_user)
         
         return {
-            "status": "success",
-            "message": "User registered successfully",
-            "user_id": db_user.m_user_id
+            "user_id": db_user.m_user_id,
+            "username": db_user.m_username,
+            "email": db_user.m_email,
+            "user_type": db_user.m_user_type,
+            "message": "User created successfully"
         }
         
     except ValueError as ve:
