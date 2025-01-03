@@ -17,7 +17,7 @@ class User(Base):
     user_id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(255), nullable=False, unique=True)
     email = Column(String(255), nullable=False, unique=True)
-    password = Column(String(255), nullable=False, server_default='1234')
+    password = Column(String(255), nullable=False)
     user_type = Column(Enum(UserTypeEnum), nullable=False)
     fullname = Column(String(255), nullable=False)
     date_of_birth = Column(Date, nullable=False)
