@@ -5,6 +5,7 @@ from apis.login.login_router import router as login_router
 from apis.test_token.test_token_router import router as test_token_router
 from apis.user.user_router import router as user_router
 from apis.hospital.hospital_router import router as hospital_router
+from apis.appointments.appointments_router import router as appointments_router
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -29,6 +30,7 @@ app.include_router(login_router, prefix="/api/auth", tags=["login"])
 app.include_router(test_token_router, prefix="/api/auth", tags=["test_token"])
 app.include_router(user_router, prefix="/api/auth", tags=["user"])
 app.include_router(hospital_router, prefix="/api/hospital", tags=["hospitals"])
+app.include_router(appointments_router, prefix="/api", tags=["appointments"])
 
 if __name__ == "__main__":
     import uvicorn

@@ -28,10 +28,10 @@ def get_password_hash(password: str) -> str:
 
 def authenticate_user(email: str, password: str, db: Session) -> User | None:
     """Authenticate a user by email and password"""
-    user = db.query(User).filter(User.m_email == email).first()
+    user = db.query(User).filter(User.email == email).first()
     if not user:
         return None
-    if not verify_password(password, user.m_password):
+    if not verify_password(password, user.password):
         return None
     return user
 
@@ -58,7 +58,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
             raise credentials_exception
             
         # Get user from database by email
-        user = db.query(User).filter(User.m_email == email).first()
+        user = db.query(User).filter(User.email == email).first()
         if user is None:
             raise credentials_exception
         return user

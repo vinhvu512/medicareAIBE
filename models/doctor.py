@@ -4,7 +4,7 @@ from database.session import Base
 class Doctor(Base):
     __tablename__ = "doctors"
 
-    m_doctor_id = Column(Integer, ForeignKey('users.m_user_id'), primary_key=True)
-    m_doctor_specialty = Column(String(255), nullable=False)
-    m_doctor_experience = Column(Integer)
-    m_profile_image = Column(String(255))
+    doctor_id = Column(Integer, ForeignKey('users.user_id'), primary_key=True)
+    doctor_specialty = Column(String(255), nullable=False)
+    doctor_experience = Column(Integer)
+    profile_image = Column(String(255))
