@@ -6,10 +6,30 @@ from models.doctor import Doctor
 from models.user import User
 from schemas.doctor import Doctor as DoctorSchema
 from models.relationships import DoctorHospital
+from pydantic import BaseModel
+from datetime import date
 
 router = APIRouter()
 
-@router.get("/by-department", response_model=List[DoctorSchema])
+# Create a new response model
+class DoctorUserResponse(BaseModel):
+    user_id: int
+    username: str
+    email: str
+    user_type: str
+    fullname: str
+    date_of_birth: date
+    gender: str
+    address: str | None
+    phone: str | None
+    profile_image: str | None
+    doctor_specialty: str
+    doctor_experience: int | None
+
+    class Config:
+        from_attributes = True
+
+@router.get("/search", response_model=List[DoctorUserResponse])
 async def get_doctors_by_department(
     hospital_id: int = Query(..., description="Hospital ID"),
     department_id: int = Query(..., description="Department ID"),
@@ -39,7 +59,27 @@ async def get_doctors_by_department(
                 }
             )
 
-        return doctors
+        # Transform the response
+        doctor_list = []
+        for doctor in doctors:
+            doctor_data = {
+                # User fields
+                "user_id": doctor.user.user_id,
+                "username": doctor.user.username,
+                "email": doctor.user.email,
+                "user_type": doctor.user.user_type,
+                "fullname": doctor.user.fullname,
+                "date_of_birth": doctor.user.date_of_birth,
+                "gender": doctor.user.gender,
+                "address": doctor.user.address,
+                "phone": doctor.user.phone,
+                "profile_image": doctor.user.profile_image,
+                "doctor_specialty": doctor.doctor_specialty,
+                "doctor_experience": doctor.doctor_experience
+            }
+            doctor_list.append(doctor_data)
+
+        return doctor_list
 
     except HTTPException as http_ex:
         raise http_ex

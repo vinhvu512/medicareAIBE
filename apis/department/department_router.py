@@ -7,7 +7,7 @@ from schemas.department import Department as DepartmentSchema
 
 router = APIRouter()
 
-@router.get("/departments/search", response_model=List[DepartmentSchema])
+@router.get("/search", response_model=List[DepartmentSchema])
 async def search_departments(
     hospital_id: int = Query(..., description="Hospital ID to search for departments"),
     db: Session = Depends(get_db)
