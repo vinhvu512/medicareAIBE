@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
-from typing import List
+from typing import Dict, List
+from schemas.doctor import WeekDay
 from database.session import get_db
 from models.doctor import Doctor
 from models.user import User
@@ -88,6 +89,71 @@ async def get_doctors_by_department(
             status_code=500,
             detail={
                 "error": f"Error fetching doctors: {str(e)}",
+                "code": 500
+            }
+        )
+    
+@router.put("/schedule/{doctor_id}")
+async def update_doctor_schedule(
+    doctor_id: int,
+    weekly_schedule: Dict[str, List[int]],
+    db: Session = Depends(get_db)
+):
+    """
+    Update a doctor's weekly schedule
+    - doctor_id: ID of the doctor
+    - weekly_schedule: Dictionary with days as keys and list of shifts (0-19) as values
+    """
+    try:
+        # Find the doctor
+        doctor = db.query(Doctor).filter(Doctor.doctor_id == doctor_id).first()
+        if not doctor:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": f"Doctor with ID {doctor_id} not found",
+                    "code": 404
+                }
+            )
+
+        # Validate schedule format
+        valid_days = [day.value for day in WeekDay]
+        for day, shifts in weekly_schedule.items():
+            if day not in valid_days:
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "error": f"Invalid day: {day}. Must be one of {valid_days}",
+                        "code": 400
+                    }
+                )
+            if not all(0 <= shift <= 19 for shift in shifts):
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "error": "Shifts must be between 0 and 19",
+                        "code": 400
+                    }
+                )
+
+        # Update schedule
+        doctor.weekly_schedule = weekly_schedule
+        db.commit()
+
+        return {
+            "message": "Schedule updated successfully",
+            "doctor_id": doctor_id,
+            "weekly_schedule": weekly_schedule
+        }
+
+    except HTTPException as http_ex:
+        raise http_ex
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": f"Failed to update schedule: {str(e)}",
                 "code": 500
             }
         )

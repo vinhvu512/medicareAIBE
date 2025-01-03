@@ -1,130 +1,121 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
 from database.session import get_db
 from models.appointment import Appointment, AppointmentStatusEnum
 from models.doctor import Doctor
-from models.patient import Patient
-from models.clinic_room import ClinicRoom
 from models.hospital import Hospital
+from models.department import Department
+from models.clinic_room import ClinicRoom
+from models.patient import Patient
+from schemas.appointment import AppointmentCreate, AppointmentResponse
 from datetime import datetime
-from pydantic import BaseModel
 
 router = APIRouter()
 
-class AppointmentCreate(BaseModel):
-    patient_id: int
-    doctor_id: int
-    hospital_id: int
-    room_id: int
-    appointment_day: datetime
-    appointment_reason: str
-
-class AppointmentResponse(BaseModel):
-    appointment_id: int
-    patient_id: int
-    doctor_id: int
-    hospital_id: int
-    room_id: int
-    appointment_day: datetime
-    appointment_reason: str
-    appointment_status: AppointmentStatusEnum
-
-    class Config:
-        from_attributes = True
-
-@router.post("/appointments", response_model=AppointmentResponse, status_code=201)
+@router.post("/appointments", response_model=AppointmentResponse)
 async def create_appointment(
-    appointment_data: AppointmentCreate,
+    appointment: AppointmentCreate,
     db: Session = Depends(get_db)
 ):
     """Create a new appointment"""
     try:
-        # Validate required fields
-        if not all([
-            appointment_data.patient_id,
-            appointment_data.doctor_id,
-            appointment_data.hospital_id,
-            appointment_data.room_id,
-            appointment_data.appointment_day
-        ]):
-            raise HTTPException(
-                status_code=400,
-                detail={
-                    "error": "Missing required fields",
-                    "code": 400
-                }
-            )
-
-        # Check if patient exists
-        patient = db.query(Patient).filter(
-            Patient.patient_id == appointment_data.patient_id
+        # Validate hospital exists
+        hospital = db.query(Hospital).filter(
+            Hospital.hospital_id == appointment.hospital_id
         ).first()
-        if not patient:
+        if not hospital:
             raise HTTPException(
-                status_code=400,
+                status_code=404,
                 detail={
-                    "error": "Patient not found",
-                    "code": 400
+                    "error": "Hospital not found",
+                    "code": 404
                 }
             )
 
-        # Check if doctor exists
+        # Validate department exists
+        department = db.query(Department).filter(
+            Department.department_id == appointment.department_id,
+            Department.hospital_id == appointment.hospital_id
+        ).first()
+        if not department:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": "Department not found in this hospital",
+                    "code": 404
+                }
+            )
+
+        # Validate room exists if provided
+        if appointment.room_id:
+            room = db.query(ClinicRoom).filter(
+                ClinicRoom.room_id == appointment.room_id,
+                ClinicRoom.department_id == appointment.department_id,
+                ClinicRoom.hospital_id == appointment.hospital_id
+            ).first()
+            if not room:
+                raise HTTPException(
+                    status_code=404,
+                    detail={
+                        "error": "Room not found in this department",
+                        "code": 404
+                    }
+                )
+
+        # Validate doctor exists
         doctor = db.query(Doctor).filter(
-            Doctor.doctor_id == appointment_data.doctor_id
+            Doctor.doctor_id == appointment.doctor_id
         ).first()
         if not doctor:
             raise HTTPException(
-                status_code=400,
+                status_code=404,
                 detail={
                     "error": "Doctor not found",
-                    "code": 400
+                    "code": 404
                 }
             )
 
-        # Check if room exists
-        room = db.query(ClinicRoom).filter(
-            ClinicRoom.room_id == appointment_data.room_id
+        # Validate patient exists
+        patient = db.query(Patient).filter(
+            Patient.patient_id == appointment.patient_id
         ).first()
-        if not room:
+        if not patient:
             raise HTTPException(
-                status_code=400,
+                status_code=404,
                 detail={
-                    "error": "Room not found",
-                    "code": 400
+                    "error": "Patient not found",
+                    "code": 404
                 }
             )
 
-        # Check for scheduling conflicts
+        # Check if doctor is available at this time
         existing_appointment = db.query(Appointment).filter(
-            and_(
-                Appointment.doctor_id == appointment_data.doctor_id,
-                Appointment.appointment_day == appointment_data.appointment_day,
-                Appointment.appointment_status.in_([
-                    AppointmentStatusEnum.SCHEDULED,
-                    AppointmentStatusEnum.IN_PROGRESS
-                ])
-            )
+            Appointment.doctor_id == appointment.doctor_id,
+            Appointment.appointment_day == appointment.appointment_day,
+            Appointment.appointment_shift == appointment.appointment_shift,
+            Appointment.status.in_([AppointmentStatusEnum.SCHEDULED, AppointmentStatusEnum.IN_PROGRESS])
         ).first()
 
         if existing_appointment:
             raise HTTPException(
                 status_code=409,
                 detail={
-                    "error": "Appointment slot not available",
+                    "error": "Doctor is not available at this time",
                     "code": 409
                 }
             )
 
         # Create new appointment
         new_appointment = Appointment(
-            patient_id=appointment_data.patient_id,
-            doctor_id=appointment_data.doctor_id,
-            hospital_id=appointment_data.hospital_id,
-            room_id=appointment_data.room_id,
-            appointment_day=appointment_data.appointment_day,
-            appointment_reason=appointment_data.appointment_reason,
-            appointment_status=AppointmentStatusEnum.SCHEDULED
+            hospital_id=appointment.hospital_id,
+            department_id=appointment.department_id,
+            room_id=appointment.room_id,
+            doctor_id=appointment.doctor_id,
+            patient_id=appointment.patient_id,
+            appointment_day=appointment.appointment_day,
+            appointment_shift=appointment.appointment_shift,
+            reason=appointment.reason,
+            status=AppointmentStatusEnum.SCHEDULED
         )
 
         db.add(new_appointment)
