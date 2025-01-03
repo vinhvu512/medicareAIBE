@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func, text
+from typing import List
 from database.session import get_db
 from models.hospital import Hospital
 from schemas.hospital import HospitalCreate, Hospital as HospitalSchema
@@ -123,4 +125,37 @@ async def create_clinic_room(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to create clinic room: {str(e)}"
+        )
+
+# Thêm endpoint mới vào router hiện có
+@router.get("/hospitals/search", response_model=List[HospitalSchema])
+async def search_hospitals(
+    query: str = Query(..., description="Search query for hospital name"),
+    db: Session = Depends(get_db)
+):
+    """
+    Search hospitals using trigram similarity.
+    Returns hospitals where name matches the search query above the given similarity threshold.
+    """
+    try:
+        
+        # Search using trigram similarity
+        results = db.query(Hospital)\
+            .filter(
+                func.similarity(Hospital.hospital_name, query) > 0
+            )\
+            .order_by(
+                func.similarity(Hospital.hospital_name, query).desc()
+            )\
+            .all()
+
+        if not results:
+            return []
+
+        return results
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error searching hospitals: {str(e)}"
         )

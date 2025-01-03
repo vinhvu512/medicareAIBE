@@ -100,20 +100,85 @@
 
 
 import requests
+import json
 
-url = "http://localhost:8000/register"
-payload = {
-    "m_username": "patient123",
-    "m_email": "patient@example.com",
-    "m_password": "SecurePass123!",
-    "m_fullname": "John Doe",
-    "m_date_of_birth": "1990-01-01",
-    "m_gender": "Male",  # Changed from MALE to Male
-    "m_user_type": "Patient",  # Changed from PATIENT to Patient
-    "m_address": "123 Main St, City",
-    "m_phone": "+84123456789",
-    "m_profile_image": "https://example.com/profile.jpg"
-}
+def test_signup_doctors():
+    url = "http://localhost:8000/api/auth/signup"
+    doctors_data = [
+        {
+            "username": "nguyenhoang",
+            "email": "nguyenhoang@gmail.com",
+            "password": "1234",
+            "fullname": "Nguyễn Hoàng",
+            "date_of_birth": "1995-03-15",
+            "gender": "Male",
+            "user_type": "Patient",
+            "address": "24 Lê Lợi, Quận 1, TP. Hồ Chí Minh",
+            "phone": "+84123456790",
+            "profile_image": "https://example.com/nguyenhoang-profile.jpg"
+        },
+        {
+            "username": "tranminhthu",
+            "email": "tranminhthu@gmail.com",
+            "password": "1234",
+            "fullname": "Trần Minh Thư",
+            "date_of_birth": "1988-07-10",
+            "gender": "Female",
+            "user_type": "Patient",
+            "address": "78 Nguyễn Thị Minh Khai, Quận 3, TP. Hồ Chí Minh",
+            "phone": "+84123456791",
+            "profile_image": "https://example.com/tranminhthu-profile.jpg"
+        },
+        {
+            "username": "phamquanghuy",
+            "email": "phamquanghuy@gmail.com",
+            "password": "1234",
+            "fullname": "Phạm Quang Huy",
+            "date_of_birth": "1992-12-05",
+            "gender": "Male",
+            "user_type": "Patient",
+            "address": "56 Cách Mạng Tháng 8, Quận 10, TP. Hồ Chí Minh",
+            "phone": "+84123456792",
+            "profile_image": "https://example.com/phamquanghuy-profile.jpg"
+        },
+        {
+            "username": "ledoantrang",
+            "email": "ledoantrang@gmail.com",
+            "password": "1234",
+            "fullname": "Lê Đoan Trang",
+            "date_of_birth": "1990-09-20",
+            "gender": "Female",
+            "user_type": "Patient",
+            "address": "45 Nguyễn Văn Trỗi, Phú Nhuận, TP. Hồ Chí Minh",
+            "phone": "+84123456793",
+            "profile_image": "https://example.com/ledoantrang-profile.jpg"
+        },
+        {
+            "username": "hoangtuankiet",
+            "email": "hoangtuankiet@gmail.com",
+            "password": "1234",
+            "fullname": "Hoàng Tuấn Kiệt",
+            "date_of_birth": "1985-06-15",
+            "gender": "Male",
+            "user_type": "Patient",
+            "address": "67 Phan Xích Long, Bình Thạnh, TP. Hồ Chí Minh",
+            "phone": "+84123456794",
+            "profile_image": "https://example.com/hoangtuankiet-profile.jpg"
+        }
+    ]
 
-response = requests.post(url, json=payload)
-print(response.json())
+    headers = {
+        'Content-Type': 'application/json'
+    }
+
+    for doctor in doctors_data:
+        try:
+            response = requests.post(url, json=doctor, headers=headers)
+            print(f"Signing up doctor {doctor['username']}:")
+            print(f"Status Code: {response.status_code}")
+            print(f"Response: {response.json()}\n")
+        except Exception as e:
+            print(f"Error signing up doctor {doctor['username']}: {str(e)}\n")
+
+if __name__ == "__main__":
+    test_signup_doctors()

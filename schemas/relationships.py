@@ -44,6 +44,7 @@ class PatientHospital(PatientHospitalBase):
 class DoctorHospitalBase(BaseModel):
     doctor_id: int
     hospital_id: int
+    department_id: int
     work_schedule: str | None = None
     start_date: date
     end_date: date | None = None

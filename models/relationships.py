@@ -35,6 +35,7 @@ class DoctorHospital(Base):
     relationship_id = Column(Integer, primary_key=True, autoincrement=True)
     doctor_id = Column(Integer, ForeignKey('doctors.doctor_id'))
     hospital_id = Column(Integer, ForeignKey('hospitals.hospital_id'))
+    department_id = Column(Integer, ForeignKey('departments.department_id'))
     work_schedule = Column(String(255))
     start_date = Column(Date, nullable=False)
     end_date = Column(Date)
