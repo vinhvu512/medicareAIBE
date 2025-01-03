@@ -8,36 +8,23 @@ from models.doctor import Doctor
 from database.session import get_db
 from sqlalchemy.orm import Session
 from typing import Optional
+from schemas.user import UserSignUp
 
 router = APIRouter()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-class UserSignUp(BaseModel):
-    username: str
-    email: EmailStr
-    password: str
-    fullname: str
-    date_of_birth: date
-    gender: GenderEnum
-    user_type: UserTypeEnum
-    address: Optional[str] = None
-    phone: Optional[str] = None
-    profile_image: Optional[str] = None
-    doctor_specialty: Optional[str] = None 
-    doctor_experience: Optional[int] = None
-
 @router.post("/signup")
 async def signup(user_data: UserSignUp, db: Session = Depends(get_db)):
     # Check unique username
-    if db.query(User).filter(User.m_username == user_data.username).first():
+    if db.query(User).filter(User.username == user_data.username).first():
         raise HTTPException(
             status_code=400,
             detail="Username already exists"
         )
         
     # Check unique email
-    if db.query(User).filter(User.m_email == user_data.email).first():
+    if db.query(User).filter(User.email == user_data.email).first():
         raise HTTPException(
             status_code=400,
             detail="Email already exists"
@@ -49,16 +36,16 @@ async def signup(user_data: UserSignUp, db: Session = Depends(get_db)):
         
         # Create base user
         db_user = User(
-            m_username=user_data.username,
-            m_email=user_data.email,
-            m_password=hashed_password,
-            m_fullname=user_data.fullname,
-            m_date_of_birth=user_data.date_of_birth,
-            m_gender=user_data.gender,
-            m_user_type=user_data.user_type,
-            m_address=user_data.address,
-            m_phone=user_data.phone,
-            m_profile_image=user_data.profile_image
+            username=user_data.username,
+            email=user_data.email,
+            password=hashed_password,
+            fullname=user_data.fullname,
+            date_of_birth=user_data.date_of_birth,
+            gender=user_data.gender,
+            user_type=user_data.user_type,
+            address=user_data.address,
+            phone=user_data.phone,
+            profile_image=user_data.profile_image
         )
         db.add(db_user)
         db.flush()
@@ -66,7 +53,7 @@ async def signup(user_data: UserSignUp, db: Session = Depends(get_db)):
         # Create associated profile based on user type
         if user_data.user_type == UserTypeEnum.PATIENT:
             patient = Patient(
-                m_patient_id=db_user.m_user_id
+                patient_id=db_user.user_id
             )
             db.add(patient)
             
@@ -75,9 +62,9 @@ async def signup(user_data: UserSignUp, db: Session = Depends(get_db)):
                 raise ValueError("Doctor specialty is required for doctor users")
                 
             doctor = Doctor(
-                m_doctor_id=db_user.m_user_id,
-                m_doctor_specialty=user_data.doctor_specialty,
-                m_doctor_experience=user_data.doctor_experience
+                doctor_id=db_user.user_id,
+                doctor_specialty=user_data.doctor_specialty,
+                doctor_experience=user_data.doctor_experience
             )
             db.add(doctor)
 
@@ -85,10 +72,10 @@ async def signup(user_data: UserSignUp, db: Session = Depends(get_db)):
         db.refresh(db_user)
         
         return {
-            "user_id": db_user.m_user_id,
-            "username": db_user.m_username,
-            "email": db_user.m_email,
-            "user_type": db_user.m_user_type,
+            "user_id": db_user.user_id,
+            "username": db_user.username,
+            "email": db_user.email,
+            "user_type": db_user.user_type,
             "message": "User created successfully"
         }
         

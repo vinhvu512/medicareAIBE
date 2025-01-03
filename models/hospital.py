@@ -4,9 +4,9 @@ from database.session import Base
 class Hospital(Base):
     __tablename__ = "hospitals"
 
-    m_hospital_id = Column(Integer, primary_key=True, autoincrement=True)
-    m_hospital_name = Column(String(255), nullable=False)
-    m_hospital_address = Column(String(255))
-    m_hospital_phone = Column(String(15))
-    m_hospital_email = Column(String(255))
-    m_hospital_image = Column(String(255))
+    hospital_id = Column(Integer, primary_key=True, autoincrement=True)
+    hospital_name = Column(String(255), nullable=False)
+    hospital_address = Column(String(255))
+    hospital_phone = Column(String(15))
+    hospital_email = Column(String(255))
+    hospital_image = Column(String(255))

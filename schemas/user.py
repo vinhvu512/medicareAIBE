@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from datetime import date
 from enum import Enum
+from typing import Optional
 
 class GenderEnum(str, Enum):
     MALE = "Male"
@@ -12,21 +13,25 @@ class UserTypeEnum(str, Enum):
     PATIENT = "Patient"
 
 class UserBase(BaseModel):
-    m_username: str
-    m_email: EmailStr
-    m_user_type: UserTypeEnum
-    m_fullname: str
-    m_date_of_birth: date
-    m_gender: GenderEnum
-    m_address: str | None = None
-    m_phone: str | None = None
-    m_profile_image: str | None = None
+    username: str
+    email: EmailStr
+    user_type: UserTypeEnum
+    fullname: str
+    date_of_birth: date
+    gender: GenderEnum
+    address: str | None = None
+    phone: str | None = None
+    profile_image: str | None = None
 
 class UserCreate(UserBase):
-    m_password: str = "1234"
+    password: str = "1234"
 
 class User(UserBase):
-    m_user_id: int
+    user_id: int
     
     class Config:
         from_attributes = True
+
+class UserSignUp(UserCreate):
+    doctor_specialty: Optional[str] = None
+    doctor_experience: Optional[int] = None

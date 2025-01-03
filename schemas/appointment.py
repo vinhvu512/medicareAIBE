@@ -9,19 +9,19 @@ class AppointmentStatusEnum(str, Enum):
     IN_PROGRESS = "InProgress"
 
 class AppointmentBase(BaseModel):
-    m_appointment_day: datetime
-    m_appointment_status: AppointmentStatusEnum
-    m_appointment_reason: str | None = None
-    m_patient_id: int
-    m_doctor_id: int
-    m_room_id: int
-    m_hospital_id: int
+    appointment_day: datetime
+    appointment_status: AppointmentStatusEnum
+    appointment_reason: str | None = None
+    patient_id: int
+    doctor_id: int
+    room_id: int
+    hospital_id: int
 
 class AppointmentCreate(AppointmentBase):
     pass
 
 class Appointment(AppointmentBase):
-    m_appointment_id: int
+    appointment_id: int
 
     class Config:
         from_attributes = True
