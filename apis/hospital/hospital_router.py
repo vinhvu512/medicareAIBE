@@ -128,7 +128,7 @@ async def create_clinic_room(
         )
 
 # Thêm endpoint mới vào router hiện có
-@router.get("/hospitals/search", response_model=List[HospitalSchema])
+@router.get("/search", response_model=List[HospitalSchema])
 async def search_hospitals(
     query: str = Query(..., description="Search query for hospital name"),
     db: Session = Depends(get_db)
