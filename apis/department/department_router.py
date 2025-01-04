@@ -22,23 +22,33 @@ async def search_departments(
             .all()
 
         if not departments:
-            raise HTTPException(
-                status_code=404,
-                detail={
-                    "error": f"No departments found for hospital ID: {hospital_id}",
-                    "code": 404
-                }
-            )
+            return {
+                "code": 404,
+                "message": f"No departments found for hospital ID: {hospital_id}",
+                "data": []
+            }
 
-        return departments
+        department_list = [
+            {
+                "department_id": department.department_id,
+                "department_name": department.department_name,
+                "department_location": department.department_location,
+                "hospital_id": department.hospital_id
+            }
+            for department in departments
+        ]
 
-    except HTTPException as http_ex:
-        raise http_ex
+        return {
+            "code": 200,
+            "message": "Departments retrieved successfully",
+            "data": department_list
+        }
+
     except Exception as e:
         raise HTTPException(
             status_code=500, 
             detail={
-                "error": f"Error searching departments: {str(e)}",
-                "code": 500
+                "code": 500,
+                "message": f"Error searching departments: {str(e)}"
             }
         )
