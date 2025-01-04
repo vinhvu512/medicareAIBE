@@ -30,9 +30,21 @@ def authenticate_user(email: str, password: str, db: Session) -> User | None:
     """Authenticate a user by email and password"""
     user = db.query(User).filter(User.email == email).first()
     if not user:
-        return None
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "error": "Invalid email or password",
+                "code": 401
+            }
+        )
     if not verify_password(password, user.password):
-        return None
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "error": "Invalid email or password",
+                "code": 401
+            }
+        )
     return user
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
@@ -46,7 +58,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     """Get current authenticated user from token"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials", 
+        detail={
+            "error": "Could not validate credentials",
+            "code": 401
+        },
         headers={"WWW-Authenticate": "Bearer"},
     )
     
@@ -69,5 +84,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
     """Verify user is active"""
     if not current_user:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "Inactive user",
+                "code": 400
+            }
+        )
     return current_user
