@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database.session import get_db
 from models.appointment import Appointment, AppointmentStatusEnum
@@ -8,7 +8,6 @@ from models.department import Department
 from models.clinic_room import ClinicRoom
 from models.patient import Patient
 from schemas.appointment import AppointmentCreate, AppointmentResponse
-from datetime import datetime
 
 router = APIRouter()
 
@@ -24,13 +23,11 @@ async def create_appointment(
             Hospital.hospital_id == appointment.hospital_id
         ).first()
         if not hospital:
-            raise HTTPException(
-                status_code=404,
-                detail={
-                    "error": "Hospital not found",
-                    "code": 404
-                }
-            )
+            return {
+                "code": 404,
+                "message": "Hospital not found",
+                "data": None
+            }
 
         # Validate department exists
         department = db.query(Department).filter(
@@ -38,13 +35,11 @@ async def create_appointment(
             Department.hospital_id == appointment.hospital_id
         ).first()
         if not department:
-            raise HTTPException(
-                status_code=404,
-                detail={
-                    "error": "Department not found in this hospital",
-                    "code": 404
-                }
-            )
+            return {
+                "code": 404,
+                "message": "Department not found in this hospital",
+                "data": None
+            }
 
         # Validate room exists if provided
         if appointment.room_id:
@@ -54,39 +49,33 @@ async def create_appointment(
                 ClinicRoom.hospital_id == appointment.hospital_id
             ).first()
             if not room:
-                raise HTTPException(
-                    status_code=404,
-                    detail={
-                        "error": "Room not found in this department",
-                        "code": 404
-                    }
-                )
+                return {
+                    "code": 404,
+                    "message": "Room not found in this department",
+                    "data": None
+                }
 
         # Validate doctor exists
         doctor = db.query(Doctor).filter(
             Doctor.doctor_id == appointment.doctor_id
         ).first()
         if not doctor:
-            raise HTTPException(
-                status_code=404,
-                detail={
-                    "error": "Doctor not found",
-                    "code": 404
-                }
-            )
+            return {
+                "code": 404,
+                "message": "Doctor not found",
+                "data": None
+            }
 
         # Validate patient exists
         patient = db.query(Patient).filter(
             Patient.patient_id == appointment.patient_id
         ).first()
         if not patient:
-            raise HTTPException(
-                status_code=404,
-                detail={
-                    "error": "Patient not found",
-                    "code": 404
-                }
-            )
+            return {
+                "code": 404,
+                "message": "Patient not found",
+                "data": None
+            }
 
         # Check if doctor is available at this time
         existing_appointment = db.query(Appointment).filter(
@@ -97,13 +86,11 @@ async def create_appointment(
         ).first()
 
         if existing_appointment:
-            raise HTTPException(
-                status_code=409,
-                detail={
-                    "error": "Doctor is not available at this time",
-                    "code": 409
-                }
-            )
+            return {
+                "code": 409,
+                "message": "Doctor is not available at this time",
+                "data": None
+            }
 
         # Create new appointment
         new_appointment = Appointment(
@@ -122,16 +109,18 @@ async def create_appointment(
         db.commit()
         db.refresh(new_appointment)
 
-        return new_appointment
+        return {
+            "code": 201,
+            "message": "Appointment created successfully",
+            "data": new_appointment
+        }
 
-    except HTTPException as http_ex:
-        raise http_ex
     except Exception as e:
         db.rollback()
         raise HTTPException(
             status_code=500,
             detail={
-                "error": f"Failed to create appointment: {str(e)}",
-                "code": 500
+                "code": 500,
+                "message": f"Failed to create appointment: {str(e)}"
             }
         )

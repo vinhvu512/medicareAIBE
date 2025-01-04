@@ -46,7 +46,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     """Get current authenticated user from token"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials", 
+        detail={
+            "code": 401,
+            "message": "Could not validate credentials"
+        },
         headers={"WWW-Authenticate": "Bearer"},
     )
     
@@ -69,5 +72,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
     """Verify user is active"""
     if not current_user:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(
+            status_code=400, 
+            detail={
+                "code": 400,
+                "message": "Inactive user"
+            }
+        )
     return current_user

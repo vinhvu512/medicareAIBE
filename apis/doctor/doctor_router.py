@@ -12,7 +12,6 @@ from datetime import date
 
 router = APIRouter()
 
-# Create a new response model
 class DoctorUserResponse(BaseModel):
     user_id: int
     username: str
@@ -38,7 +37,6 @@ async def get_doctors_by_department(
 ):
     """
     Get all doctors working in a specific department at a specific hospital.
-    Returns doctors based on hospital_id and department_id from doctor_hospitals relationship.
     """
     try:
         doctors = db.query(Doctor)\
@@ -52,19 +50,14 @@ async def get_doctors_by_department(
             .all()
 
         if not doctors:
-            raise HTTPException(
-                status_code=404,
-                detail={
-                    "error": f"No doctors found for hospital ID {hospital_id} and department ID {department_id}",
-                    "code": 404
-                }
-            )
+            return {
+                "code": 404,
+                "message": f"No doctors found for hospital ID {hospital_id} and department ID {department_id}",
+                "data": []
+            }
 
-        # Transform the response
-        doctor_list = []
-        for doctor in doctors:
-            doctor_data = {
-                # User fields
+        doctor_list = [
+            {
                 "user_id": doctor.user.user_id,
                 "username": doctor.user.username,
                 "email": doctor.user.email,
@@ -78,21 +71,24 @@ async def get_doctors_by_department(
                 "doctor_specialty": doctor.doctor_specialty,
                 "doctor_experience": doctor.doctor_experience
             }
-            doctor_list.append(doctor_data)
+            for doctor in doctors
+        ]
 
-        return doctor_list
+        return {
+            "code": 200,
+            "message": "Doctors retrieved successfully",
+            "data": doctor_list
+        }
 
-    except HTTPException as http_ex:
-        raise http_ex
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail={
-                "error": f"Error fetching doctors: {str(e)}",
-                "code": 500
+                "code": 500,
+                "message": f"Error fetching doctors: {str(e)}"
             }
         )
-    
+
 @router.put("/schedule/{doctor_id}")
 async def update_doctor_schedule(
     doctor_id: int,
@@ -100,60 +96,50 @@ async def update_doctor_schedule(
     db: Session = Depends(get_db)
 ):
     """
-    Update a doctor's weekly schedule
-    - doctor_id: ID of the doctor
-    - weekly_schedule: Dictionary with days as keys and list of shifts (0-19) as values
+    Update a doctor's weekly schedule.
     """
     try:
-        # Find the doctor
         doctor = db.query(Doctor).filter(Doctor.doctor_id == doctor_id).first()
         if not doctor:
-            raise HTTPException(
-                status_code=404,
-                detail={
-                    "error": f"Doctor with ID {doctor_id} not found",
-                    "code": 404
-                }
-            )
+            return {
+                "code": 404,
+                "message": f"Doctor with ID {doctor_id} not found",
+                "data": None
+            }
 
-        # Validate schedule format
         valid_days = [day.value for day in WeekDay]
         for day, shifts in weekly_schedule.items():
             if day not in valid_days:
-                raise HTTPException(
-                    status_code=400,
-                    detail={
-                        "error": f"Invalid day: {day}. Must be one of {valid_days}",
-                        "code": 400
-                    }
-                )
+                return {
+                    "code": 400,
+                    "message": f"Invalid day: {day}. Must be one of {valid_days}",
+                    "data": None
+                }
             if not all(0 <= shift <= 19 for shift in shifts):
-                raise HTTPException(
-                    status_code=400,
-                    detail={
-                        "error": "Shifts must be between 0 and 19",
-                        "code": 400
-                    }
-                )
+                return {
+                    "code": 400,
+                    "message": "Shifts must be between 0 and 19",
+                    "data": None
+                }
 
-        # Update schedule
         doctor.weekly_schedule = weekly_schedule
         db.commit()
 
         return {
+            "code": 200,
             "message": "Schedule updated successfully",
-            "doctor_id": doctor_id,
-            "weekly_schedule": weekly_schedule
+            "data": {
+                "doctor_id": doctor_id,
+                "weekly_schedule": weekly_schedule
+            }
         }
 
-    except HTTPException as http_ex:
-        raise http_ex
     except Exception as e:
         db.rollback()
         raise HTTPException(
             status_code=500,
             detail={
-                "error": f"Failed to update schedule: {str(e)}",
-                "code": 500
+                "code": 500,
+                "message": f"Failed to update schedule: {str(e)}"
             }
         )

@@ -72,11 +72,12 @@ async def signup(user_data: UserSignUp, db: Session = Depends(get_db)):
         db.refresh(db_user)
         
         return {
+            "code": 201,
+            "message": "User created successfully",
             "user_id": db_user.user_id,
             "username": db_user.username,
             "email": db_user.email,
             "user_type": db_user.user_type,
-            "message": "User created successfully"
         }
         
     except ValueError as ve:
