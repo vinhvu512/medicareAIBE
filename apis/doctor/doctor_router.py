@@ -83,10 +83,10 @@ async def get_doctor_by_id(
             }
         )
 
-@router.get("/search", response_model=List[DoctorUserResponse])
+@router.get("/search/{hospital_id}/{department_id}", response_model=List[DoctorUserResponse])
 async def get_doctors_by_department(
-    hospital_id: int = Query(..., description="Hospital ID"),
-    department_id: int = Query(..., description="Department ID"),
+    hospital_id: int,
+    department_id: int,
     db: Session = Depends(get_db)
 ):
     """
