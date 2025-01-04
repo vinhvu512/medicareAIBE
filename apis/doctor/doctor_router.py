@@ -30,6 +30,59 @@ class DoctorUserResponse(BaseModel):
     class Config:
         from_attributes = True
 
+@router.get("/{doctor_id}", response_model=DoctorUserResponse)
+async def get_doctor_by_id(
+    doctor_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get doctor information by doctor_id.
+    Returns doctor's details including user information.
+    """
+    try:
+        doctor = db.query(Doctor)\
+            .options(joinedload(Doctor.user))\
+            .filter(Doctor.doctor_id == doctor_id)\
+            .first()
+
+        if not doctor:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": f"Doctor with ID {doctor_id} not found",
+                    "code": 404
+                }
+            )
+
+        # Transform the response to match DoctorUserResponse model
+        doctor_data = {
+            "user_id": doctor.user.user_id,
+            "username": doctor.user.username,
+            "email": doctor.user.email,
+            "user_type": doctor.user.user_type,
+            "fullname": doctor.user.fullname,
+            "date_of_birth": doctor.user.date_of_birth,
+            "gender": doctor.user.gender,
+            "address": doctor.user.address,
+            "phone": doctor.user.phone,
+            "profile_image": doctor.user.profile_image,
+            "doctor_specialty": doctor.doctor_specialty,
+            "doctor_experience": doctor.doctor_experience
+        }
+
+        return doctor_data
+
+    except HTTPException as http_ex:
+        raise http_ex
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": f"Error fetching doctor: {str(e)}",
+                "code": 500
+            }
+        )
+
 @router.get("/search", response_model=List[DoctorUserResponse])
 async def get_doctors_by_department(
     hospital_id: int = Query(..., description="Hospital ID"),

@@ -7,6 +7,42 @@ from schemas.department import Department as DepartmentSchema
 
 router = APIRouter()
 
+@router.get("/{department_id}", response_model=DepartmentSchema)
+async def get_department_by_id(
+    department_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get department information by department_id.
+    Returns department's details.
+    """
+    try:
+        department = db.query(Department)\
+            .filter(Department.department_id == department_id)\
+            .first()
+
+        if not department:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": f"Department with ID {department_id} not found",
+                    "code": 404
+                }
+            )
+
+        return department
+
+    except HTTPException as http_ex:
+        raise http_ex
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": f"Error fetching department: {str(e)}",
+                "code": 500
+            }
+        )
+
 @router.get("/search", response_model=List[DepartmentSchema])
 async def search_departments(
     hospital_id: int = Query(..., description="Hospital ID to search for departments"),
