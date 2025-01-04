@@ -3,11 +3,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from database.session import get_db
 from models.relationships import DoctorHospital, RelationshipStatusEnum
-from models.doctor import Doctor 
+from models.doctor import Doctor
 from models.hospital import Hospital
 from schemas.relationships import DoctorHospitalCreate, DoctorHospital as DoctorHospitalSchema
 from models.department import Department
-from schemas.department import DepartmentCreate, Department as DepartmentSchema
+from schemas.department import Department as DepartmentSchema
 
 from datetime import date
 
@@ -18,53 +18,42 @@ async def create_doctor_hospital_relationship(
     relationship_data: DoctorHospitalCreate,
     db: Session = Depends(get_db)
 ):
-    """Create a new doctor-hospital relationship"""
+    """
+    Create a new doctor-hospital relationship
+    """
     try:
-        # Validate required fields
-        if not relationship_data.doctor_id or not relationship_data.hospital_id or not relationship_data.department_id:
-            raise HTTPException(
-                status_code=400,
-                detail={
-                    "error": "Missing doctor_id, hospital_id or department_id",
-                    "code": 400
-                }
-            )
-
         # Check if doctor exists
-        doctor = db.query(Doctor).filter(
-            Doctor.doctor_id == relationship_data.doctor_id
-        ).first()
+        doctor = db.query(Doctor).filter(Doctor.doctor_id == relationship_data.doctor_id).first()
         if not doctor:
             raise HTTPException(
                 status_code=404,
                 detail={
-                    "error": "Doctor not found",
+                    "error": f"Doctor with ID {relationship_data.doctor_id} not found",
                     "code": 404
                 }
             )
 
         # Check if hospital exists
-        hospital = db.query(Hospital).filter(
-            Hospital.hospital_id == relationship_data.hospital_id
-        ).first()
+        hospital = db.query(Hospital).filter(Hospital.hospital_id == relationship_data.hospital_id).first()
         if not hospital:
             raise HTTPException(
                 status_code=404,
                 detail={
-                    "error": "Hospital not found", 
+                    "error": f"Hospital with ID {relationship_data.hospital_id} not found",
                     "code": 404
                 }
             )
-            
-        # Check if department exists
+
+        # Check if department exists and belongs to hospital
         department = db.query(Department).filter(
-            Department.department_id == relationship_data.department_id
+            Department.department_id == relationship_data.department_id,
+            Department.hospital_id == relationship_data.hospital_id
         ).first()
         if not department:
             raise HTTPException(
                 status_code=404,
                 detail={
-                    "error": "Department not found",
+                    "error": f"Department ID {relationship_data.department_id} does not belong to Hospital ID {relationship_data.hospital_id}",
                     "code": 404
                 }
             )
