@@ -10,7 +10,7 @@ class Doctor(Base):
     doctor_experience = Column(Integer, nullable=False, default=0)
     profile_image = Column(String(255))
     # New column to store schedule as JSON
-    weekly_schedule = Column(JSON, default=dict)
+    weekly_schedule = Column(JSON, default=lambda: {day: [] for day in WeekDay})
 
     user = relationship(
         "User",

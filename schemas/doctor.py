@@ -12,19 +12,24 @@ class WeekDay(str, Enum):
     SATURDAY = "Saturday"
     SUNDAY = "Sunday"
 
+class ShiftSchedule(BaseModel):
+    shift_id: int
+    room_id: int
+
 class DoctorBase(BaseModel):
     doctor_specialty: str
     doctor_experience: int | None = 0
     profile_image: str | None = None
-    weekly_schedule: Dict[str, List[int]] = Field(
+    weekly_schedule: Dict[str, List[ShiftSchedule]] = Field(
         default_factory=lambda: {day: [] for day in WeekDay}
     )
 
     @validator('weekly_schedule')
     def validate_shifts(cls, v):
         for day, shifts in v.items():
-            if not all(0 <= shift <= 19 for shift in shifts):
-                raise ValueError("Shifts must be between 0 and 19")
+            for shift in shifts:
+                if not (0 <= shift.shift_id <= 19):
+                    raise ValueError("Shift ID must be between 0 and 19")
         return v
 
 class DoctorCreate(DoctorBase):
