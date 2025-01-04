@@ -1,5 +1,5 @@
 from pydantic import BaseModel, conint, validator
-from datetime import datetime
+from datetime import date
 from enum import Enum
 
 class AppointmentStatusEnum(str, Enum):
@@ -14,7 +14,7 @@ class AppointmentBase(BaseModel):
     room_id: int | None = None
     doctor_id: int
     patient_id: int
-    appointment_day: datetime
+    appointment_day: date
     appointment_shift: int  # Between 0-19
     reason: str | None = None
     status: AppointmentStatusEnum = AppointmentStatusEnum.SCHEDULED

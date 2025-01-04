@@ -159,3 +159,33 @@ async def search_hospitals(
             status_code=500,
             detail=f"Error searching hospitals: {str(e)}"
         )
+    
+@router.get("/", response_model=List[HospitalSchema])
+async def get_all_hospitals(
+    db: Session = Depends(get_db),
+    skip: int = Query(0, description="Skip x records"),
+    limit: int = Query(100, description="Limit the number of records returned")
+):
+    """
+    Get all hospitals with pagination support.
+    Returns a list of all hospitals in the database.
+    """
+    try:
+        hospitals = db.query(Hospital)\
+            .offset(skip)\
+            .limit(limit)\
+            .all()
+
+        if not hospitals:
+            return []
+
+        return hospitals
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": f"Error fetching hospitals: {str(e)}",
+                "code": 500
+            }
+        )

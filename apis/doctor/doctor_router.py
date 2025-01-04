@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from typing import Dict, List
-from schemas.doctor import WeekDay
+from schemas.doctor import WeekDay, ShiftSchedule
 from database.session import get_db
 from models.doctor import Doctor
 from models.user import User
@@ -93,16 +93,16 @@ async def get_doctors_by_department(
             }
         )
     
-@router.put("/schedule/{doctor_id}")
+@router.put("/schedule/{doctor_id}", response_model=Dict)
 async def update_doctor_schedule(
     doctor_id: int,
-    weekly_schedule: Dict[str, List[int]],
+    weekly_schedule: Dict[str, List[ShiftSchedule]],  # Change the type annotation
     db: Session = Depends(get_db)
 ):
     """
     Update a doctor's weekly schedule
     - doctor_id: ID of the doctor
-    - weekly_schedule: Dictionary with days as keys and list of shifts (0-19) as values
+    - weekly_schedule: Dictionary with days as keys and list of ShiftSchedule objects as values
     """
     try:
         # Find the doctor
@@ -127,23 +127,30 @@ async def update_doctor_schedule(
                         "code": 400
                     }
                 )
-            if not all(0 <= shift <= 19 for shift in shifts):
-                raise HTTPException(
-                    status_code=400,
-                    detail={
-                        "error": "Shifts must be between 0 and 19",
-                        "code": 400
-                    }
-                )
+            for shift in shifts:
+                if not (0 <= shift.shift_id <= 19):
+                    raise HTTPException(
+                        status_code=400,
+                        detail={
+                            "error": "Shifts must be between 0 and 19",
+                            "code": 400
+                        }
+                    )
+
+        # Convert ShiftSchedule objects to dict before storing
+        schedule_dict = {
+            day: [{"shift_id": s.shift_id, "room_id": s.room_id} for s in shifts]
+            for day, shifts in weekly_schedule.items()
+        }
 
         # Update schedule
-        doctor.weekly_schedule = weekly_schedule
+        doctor.weekly_schedule = schedule_dict
         db.commit()
 
         return {
             "message": "Schedule updated successfully",
             "doctor_id": doctor_id,
-            "weekly_schedule": weekly_schedule
+            "weekly_schedule": schedule_dict
         }
 
     except HTTPException as http_ex:
