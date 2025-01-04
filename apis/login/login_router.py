@@ -7,7 +7,7 @@ from datetime import timedelta
 
 router = APIRouter()
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -25,12 +25,12 @@ async def login(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     access_token = create_access_token(
         data={"sub": user.email},  # Use email instead of username
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-    
+
     return {
         "access_token": access_token,
         "token_type": "bearer",

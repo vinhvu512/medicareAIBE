@@ -43,9 +43,9 @@ async def get_department_by_id(
             }
         )
 
-@router.get("/search", response_model=List[DepartmentSchema])
+@router.get("/search/{hospital_id}", response_model=List[DepartmentSchema])
 async def search_departments(
-    hospital_id: int = Query(..., description="Hospital ID to search for departments"),
+    hospital_id: int,
     db: Session = Depends(get_db)
 ):
     """
