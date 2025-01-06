@@ -1,19 +1,19 @@
-from llama_index.core.tools import FunctionTool
-from sqlalchemy.orm import Session
-from database.session import SessionLocal
-from schemas.appointment import AppointmentCreate
-from models.hospital import Hospital
-from models.department import Department
-from models.doctor import Doctor
-from models.appointment import Appointment
-from typing import List
+# from llama_index.core.tools import FunctionTool
+# from sqlalchemy.orm import Session
+# from database.session import SessionLocal
+# from schemas.appointment import AppointmentCreate
+# from models.hospital import Hospital
+# from models.department import Department
+# from models.doctor import Doctor
+# from models.appointment import Appointment
+# from typing import List
 import requests
 class HospitalTool:import requests
 from llama_index.core.tools import FunctionTool
 from typing import List, Union
-from llama_index.tools.requests import RequestsToolSpec
+# from llama_index.tools.requests import RequestsToolSpec
 
-BASE_URL = "http://localhost:8000/api"
+BASE_URL = "http://localhost:80/api"
 
 class HospitalTool:
     def __init__(self):
@@ -46,7 +46,7 @@ class HospitalTool:
         try:
             # token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsImV4cCI6MTczNjE1NjAxOH0.9QWhRvkQSiey5DVpMwPdGUIGsHTLaLm_xVcH4o1djtc"
             # Hard code URL giống lệnh curl
-            url = "http://127.0.0.1:8000/api/hospital/"
+            url = "http://127.0.0.1:80/api/hospital/"
             headers = {
                 'Authorization': f'Bearer {token}'
             }

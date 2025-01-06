@@ -1,22 +1,16 @@
-from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from .llm_service import LLMService
-from .tools.weather_tool import WeatherTool
-from .tools.stock_tool import StockTool
-from .tools.user_tool import UserTool
-from llama_index.core.agent import ReActAgent
-from .auth_service import authenticate_user, create_access_token, verify_token
-from llama_index.core.llms import ChatMessage
+from fastapi.security import OAuth2PasswordBearer
+
+from geminiagent.llm_service import LLMService
+from tools.weather_tool import WeatherTool
+from tools.stock_tool import StockTool
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-from .tools.hospital_tool import HospitalTool
-from .tools.user_tool import UserTool
+from tools.hospital_tool import HospitalTool
 from llama_index.core.agent import ReActAgent
-from .auth_service import authenticate_user, create_access_token, verify_token
-from llama_index.core.llms import ChatMessage
 from typing import List, Dict
 import logging
-from .token_context import current_token  # Import the context variable
+from geminiagent.token_context import current_token  # Import the context variable
 
 class AgentService:
     def __init__(self):
@@ -131,7 +125,7 @@ class AgentService:
 
 agent_service = AgentService()
 
-from fastapi import HTTPException, Request, Depends
+from fastapi import HTTPException, Request
 from jose import jwt, JWTError
 
 SECRET_KEY = "your-secret-key"
