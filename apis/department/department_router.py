@@ -4,13 +4,16 @@ from typing import List
 from database.session import get_db
 from models.department import Department
 from schemas.department import Department as DepartmentSchema
+from apis.authenticate.authenticate import get_current_patient
+from models.user import User
 
 router = APIRouter()
 
 @router.get("/search", response_model=List[DepartmentSchema])
 async def search_departments(
     hospital_id: int = Query(..., description="Hospital ID to search for departments"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_patient)
 ):
     """
     Search departments by hospital ID.
@@ -46,7 +49,8 @@ async def search_departments(
 @router.get("/{department_id}", response_model=DepartmentSchema)
 async def get_department_by_id(
     department_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_patient)
 ):
     """
     Get department information by department_id.

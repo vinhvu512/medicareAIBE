@@ -10,6 +10,9 @@ from models.relationships import DoctorHospital
 from pydantic import BaseModel
 from datetime import date
 
+from apis.authenticate.authenticate import get_current_patient
+from models.user import User
+
 router = APIRouter()
 
 # Create a new response model
@@ -34,7 +37,8 @@ class DoctorUserResponse(BaseModel):
 async def get_doctors_by_department(
     hospital_id: int = Query(..., description="Hospital ID"),
     department_id: int = Query(..., description="Department ID"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_patient)
 ):
     """
     Get all doctors working in a specific department at a specific hospital.
@@ -97,7 +101,8 @@ async def get_doctors_by_department(
 async def update_doctor_schedule(
     doctor_id: int,
     weekly_schedule: Dict[str, List[ShiftSchedule]],  # Change the type annotation
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_patient)
 ):
     """
     Update a doctor's weekly schedule
@@ -168,7 +173,8 @@ async def update_doctor_schedule(
 @router.get("/{doctor_id}", response_model=DoctorUserResponse)
 async def get_doctor_by_id(
     doctor_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_patient)
 ):
     """
     Get doctor information by doctor_id.

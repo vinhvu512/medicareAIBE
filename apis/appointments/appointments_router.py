@@ -19,12 +19,16 @@ from models.doctor import Doctor
 from models.appointment import Appointment, AppointmentStatusEnum
 from schemas.doctor import WeekDay
 
+from apis.authenticate.authenticate import get_current_patient  # Add this import
+from models.user import User # Add this import
+
 router = APIRouter()
 
 @router.post("/appointments", response_model=AppointmentResponse)
 async def create_appointment(
     appointment: AppointmentCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_patient)
 ):
     """Create a new appointment"""
     try:
@@ -155,7 +159,8 @@ async def get_available_appointments(
     hospital_id: int,
     department_id: int,
     doctor_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_patient)
 ):
     print("doing")
     try:

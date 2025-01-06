@@ -10,6 +10,8 @@ from models.clinic_room import ClinicRoom
 from schemas.department import DepartmentCreate, Department as DepartmentSchema
 from schemas.clinic_room import ClinicRoomCreate, ClinicRoom as ClinicRoomSchema
 
+from apis.authenticate.authenticate import get_current_patient
+from models.user import User
 
 router = APIRouter()
 
@@ -127,11 +129,11 @@ async def create_clinic_room(
             detail=f"Failed to create clinic room: {str(e)}"
         )
 
-# Thêm endpoint mới vào router hiện có
 @router.get("/search", response_model=List[HospitalSchema])
 async def search_hospitals(
     query: str = Query(..., description="Search query for hospital name"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_patient)
 ):
     """
     Search hospitals using trigram similarity.
@@ -164,7 +166,8 @@ async def search_hospitals(
 async def get_all_hospitals(
     db: Session = Depends(get_db),
     skip: int = Query(0, description="Skip x records"),
-    limit: int = Query(100, description="Limit the number of records returned")
+    limit: int = Query(100, description="Limit the number of records returned"),
+    current_user: User = Depends(get_current_patient)
 ):
     """
     Get all hospitals with pagination support.
@@ -193,7 +196,8 @@ async def get_all_hospitals(
 @router.get("/{hospital_id}", response_model=HospitalSchema)
 async def get_hospital_by_id(
     hospital_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_patient)
 ):
     """
     Get hospital information by hospital_id.
