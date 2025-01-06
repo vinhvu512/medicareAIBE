@@ -24,7 +24,7 @@ from models.user import User # Add this import
 
 router = APIRouter()
 
-@router.post("/appointments", response_model=AppointmentResponse)
+@router.post("", response_model=AppointmentResponse)
 async def create_appointment(
     appointment: AppointmentCreate,
     db: Session = Depends(get_db),
@@ -151,9 +151,46 @@ async def create_appointment(
                 "code": 500
             }
         )
-    
 
-# getAvailableAppointment (hospital_id, department_id, doctor_id)
+@router.get("", response_model=List[AppointmentResponse])
+async def get_user_appointments(
+    user_id: int = Query(..., description="ID of the user to get appointments for"),
+    status: AppointmentStatusEnum | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    db: Session = Depends(get_db)
+):
+    """Get all appointments for a specific user"""
+    try:
+        # Build query
+        query = db.query(Appointment).filter(Appointment.patient_id == user_id)
+        
+        if status:
+            query = query.filter(Appointment.status == status)
+        if start_date:
+            query = query.filter(Appointment.appointment_day >= start_date)
+        if end_date:
+            query = query.filter(Appointment.appointment_day <= end_date)
+
+        # Get results
+        appointments = query.order_by(
+            Appointment.appointment_day.asc(),
+            Appointment.appointment_shift.asc()
+        ).all()
+
+        return appointments or []
+
+    except HTTPException as http_ex:
+        raise http_ex
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": f"Error fetching appointments: {str(e)}",
+                "code": 500
+            }
+        )
+    
 @router.get("/available-appointments")
 async def get_available_appointments(
     hospital_id: int,

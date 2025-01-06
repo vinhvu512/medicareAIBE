@@ -49,8 +49,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         detail="Could not validate credentials", 
         headers={"WWW-Authenticate": "Bearer"},
     )
-
-    print("Here")
     
     try:
 
@@ -63,12 +61,20 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         
         if user_id is None or user_type is None:
             raise credentials_exception
+        
+        print("Here ", user_type, " ", type(user_type))
             
         # Get user from database by user_id
         user = db.query(User).filter(User.user_id == user_id).first()
+
+        if user:
+            print("get ok -", user.user_type.value, "- ", type(user.user_type.value), " -", user_type, "- ", type(user_type))
+
         if user is None or user.user_type.value != user_type:
+            print("not ok")
             raise credentials_exception
-            
+        
+        
         return user
         
     except JWTError:

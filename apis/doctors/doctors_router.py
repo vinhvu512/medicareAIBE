@@ -97,12 +97,11 @@ async def get_doctors_by_department(
             }
         )
     
-@router.put("/schedule/{doctor_id}", response_model=Dict)
+@router.put("/{doctor_id}/schedule", response_model=Dict)
 async def update_doctor_schedule(
     doctor_id: int,
     weekly_schedule: Dict[str, List[ShiftSchedule]],  # Change the type annotation
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_patient)
 ):
     """
     Update a doctor's weekly schedule
