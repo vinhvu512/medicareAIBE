@@ -14,15 +14,16 @@ async def get_current_user_info(
     """Get current user information based on token"""
     try:
         return {
-            "username": current_user.m_username,
-            "email": current_user.m_email,
-            "user_type": current_user.m_user_type,
-            "fullname": current_user.m_fullname,
-            "date_of_birth": str(current_user.m_date_of_birth),
-            "gender": current_user.m_gender,
-            "address": current_user.m_address or None,
-            "phone": current_user.m_phone or None,
-            "profile_image": current_user.m_profile_image or None
+            "user_id": current_user.user_id,
+            "username": current_user.username,
+            "email": current_user.email,
+            "user_type": current_user.user_type,
+            "fullname": current_user.fullname,
+            "date_of_birth": str(current_user.date_of_birth),
+            "gender": current_user.gender,
+            "address": current_user.address or None,
+            "phone": current_user.phone or None,
+            "profile_image": current_user.profile_image or None
         }
     except Exception as e:
         raise HTTPException(
