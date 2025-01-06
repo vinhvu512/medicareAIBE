@@ -9,89 +9,203 @@
             font-family: Arial, sans-serif;
             margin: 50px;
             display: flex;
-            justify-content: space-around;
+            flex-direction: column;
+            align-items: center;
+        }
+        .management-container {
+            width: 80%;
+            margin-bottom: 40px;
         }
         .chat-container {
+            width: 80%;
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+        }
+        .agent-box {
             width: 30%;
         }
         .chatbox {
             width: 100%;
             height: 400px;
             border: 1px solid #ccc;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             padding: 10px;
             overflow-y: auto;
+            background-color: #f9f9f9;
         }
         .userInput {
-            width: 70%;
+            width: 100%;
             padding: 10px;
+            box-sizing: border-box;
         }
         button {
             padding: 10px 20px;
+            margin-top: 5px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <h2>Agent 1</h2>
-        <div class="chatbox" id="chatbox1"></div>
-        <input type="text" class="userInput" id="userInput1" placeholder="Nhập câu hỏi...">
-        <button onclick="sendMessage(1)">Gửi</button>
-    </div>
-    
-    <div class="chat-container">
-        <h2>Agent 2</h2>
-        <div class="chatbox" id="chatbox2"></div>
-        <input type="text" class="userInput" id="userInput2" placeholder="Nhập câu hỏi...">
-        <button onclick="sendMessage(2)">Gửi</button>
-    </div>
-    
-    <div class="chat-container">
-        <h2>Agent 3</h2>
-        <div class="chatbox" id="chatbox3"></div>
-        <input type="text" class="userInput" id="userInput3" placeholder="Nhập câu hỏi...">
-        <button onclick="sendMessage(3)">Gửi</button>
+    <!-- Base Prompt Management Section -->
+    <div class="management-container">
+        <h2>Base Prompt Management</h2>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <select id="promptAgentSelect">
+                <option value="1">Agent 1</option>
+                <option value="2">Agent 2</option>
+                <option value="3">Agent 3</option>
+            </select>
+            <textarea id="basePromptInput" rows="4" style="width: 400px;" placeholder="Enter base prompt..."></textarea>
+            <button onclick="setBasePrompt()">Set Base Prompt</button>
+            <button onclick="getBasePrompt()">Get Current Prompt</button>
+        </div>
     </div>
 
+    <!-- Chat Containers -->
+    <div class="chat-container">
+        <div class="agent-box">
+            <h3>Agent 1</h3>
+            <div class="chatbox" id="chatbox1"></div>
+            <input type="text" class="userInput" id="userInput1" placeholder="Nhập câu hỏi...">
+            <button onclick="sendMessage(1)">Gửi</button>
+        </div>
+        
+        <div class="agent-box">
+            <h3>Agent 2</h3>
+            <div class="chatbox" id="chatbox2"></div>
+            <input type="text" class="userInput" id="userInput2" placeholder="Nhập câu hỏi...">
+            <button onclick="sendMessage(2)">Gửi</button>
+        </div>
+        
+        <div class="agent-box">
+            <h3>Agent 3</h3>
+            <div class="chatbox" id="chatbox3"></div>
+            <input type="text" class="userInput" id="userInput3" placeholder="Nhập câu hỏi...">
+            <button onclick="sendMessage(3)">Gửi</button>
+        </div>
+    </div>
+
+    <!-- JavaScript Section -->
     <script>
-        function sendMessage(agent) {
-            const userInput = document.getElementById('userInput' + agent).value;
-            const chatbox = document.getElementById('chatbox' + agent);
-            const token = document.cookie.split('; ').find(row => row.startsWith('Authorization='));
-        
-            if (!token) {
-                alert("Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.");
-                window.location.href = "/";
-                return;
+    /**
+     * Utility function to get the value of a specific cookie by name.
+     * @param {string} name - The name of the cookie.
+     * @returns {string|null} - The value of the cookie or null if not found.
+     */
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    async function setBasePrompt() {
+        const agentId = document.getElementById('promptAgentSelect').value;
+        const prompt = document.getElementById('basePromptInput').value;
+        const token = getCookie('Authorization');
+
+        if (!token) {
+            alert("Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.");
+            window.location.href = "/";
+            return;
+        }
+
+        try {
+            const response = await fetch(`/agent/${agentId}/base-prompt`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token
+                },
+                body: JSON.stringify({ prompt: prompt })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail.error || 'Failed to set base prompt');
             }
-        
-            const authToken = token.split('=')[1];
-        
-            chatbox.innerHTML += `<div><strong>Bạn:</strong> ${userInput}</div>`;
-        
-            fetch(`/chat/agent${agent}`, {
+            alert('Base prompt updated successfully!');
+        } catch (error) {
+            alert('Error setting base prompt: ' + error.message);
+        }
+    }
+
+    async function getBasePrompt() {
+        const agentId = document.getElementById('promptAgentSelect').value;
+        const token = getCookie('Authorization');
+
+        if (!token) {
+            alert("Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.");
+            window.location.href = "/";
+            return;
+        }
+
+        try {
+            const response = await fetch(`/agent/${agentId}/base-prompt`, {
+                headers: {
+                    'Authorization': token
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail.error || 'Failed to get base prompt');
+            }
+            const data = await response.json();
+            document.getElementById('basePromptInput').value = data.base_prompt;
+        } catch (error) {
+            alert('Error getting base prompt: ' + error.message);
+        }
+    }
+
+    async function sendMessage(agent) {
+        const userInput = document.getElementById('userInput' + agent).value.trim();
+        const chatbox = document.getElementById('chatbox' + agent);
+        const token = getCookie('Authorization');
+
+        if (!token) {
+            alert("Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.");
+            window.location.href = "/";
+            return;
+        }
+
+        if (userInput === "") {
+            alert("Vui lòng nhập câu hỏi.");
+            return;
+        }
+
+        // Display user's message
+        chatbox.innerHTML += `<div><strong>Bạn:</strong> ${userInput}</div>`;
+        chatbox.scrollTop = chatbox.scrollHeight;
+
+        try {
+            const response = await fetch(`/chat/agent/${agent}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': authToken  // Send token directly without "Bearer " prefix
+                    'Authorization': token
                 },
                 body: JSON.stringify({ query: userInput })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Agent không phản hồi hoặc lỗi xác thực.");
-                }
-                return response.json();
-            })
-            .then(data => {
-                chatbox.innerHTML += `<div><strong>Bot:</strong> ${data.response || "Không nhận được phản hồi."}</div>`;
-            })
-            .catch(error => {
-                chatbox.innerHTML += `<div style="color:red;"><strong>Lỗi:</strong> ${error.message}</div>`;
             });
-        
-            document.getElementById('userInput' + agent).value = '';
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "Agent không phản hồi hoặc lỗi xác thực.");
+            }
+            
+            const data = await response.json();
+            const botResponse = data.response || "Không nhận được phản hồi.";
+            chatbox.innerHTML += `<div><strong>Bot:</strong> ${botResponse}</div>`;
+            chatbox.scrollTop = chatbox.scrollHeight;
+        } catch (error) {
+            chatbox.innerHTML += `<div style="color:red;"><strong>Lỗi:</strong> ${error.message}</div>`;
+            chatbox.scrollTop = chatbox.scrollHeight;
         }
+
+        // Clear input field
+        document.getElementById('userInput' + agent).value = '';
+    }
     </script>
 </body>
 </html>

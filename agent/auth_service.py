@@ -13,6 +13,22 @@ fake_users_db = {
     "admin@example.com": {
         "name": "Admin",
         "hashed_password": pwd_context.hash("123456"),
+    },
+    "doctor@medicare.com": {
+        "name": "Dr. Smith",
+        "hashed_password": pwd_context.hash("doctor123"),
+    },
+    "patient@gmail.com": {
+        "name": "John Doe",
+        "hashed_password": pwd_context.hash("patient123"), 
+    },
+    "staff@hospital.com": {
+        "name": "Mary Johnson",
+        "hashed_password": pwd_context.hash("staff123"),
+    },
+    "testadmin@medicare.com": {
+        "name": "Test Admin",
+        "hashed_password": pwd_context.hash("test123"),
     }
 }
 

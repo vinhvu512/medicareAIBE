@@ -13,42 +13,6 @@ from schemas.clinic_room import ClinicRoomCreate, ClinicRoom as ClinicRoomSchema
 
 router = APIRouter()
 
-@router.get("/{hospital_id}", response_model=HospitalSchema)
-async def get_hospital_by_id(
-    hospital_id: int,
-    db: Session = Depends(get_db)
-):
-    """
-    Get hospital information by hospital_id.
-    Returns hospital's details.
-    """
-    try:
-        hospital = db.query(Hospital)\
-            .filter(Hospital.hospital_id == hospital_id)\
-            .first()
-
-        if not hospital:
-            raise HTTPException(
-                status_code=404,
-                detail={
-                    "error": f"Hospital with ID {hospital_id} not found",
-                    "code": 404
-                }
-            )
-
-        return hospital
-
-    except HTTPException as http_ex:
-        raise http_ex
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": f"Error fetching hospital: {str(e)}",
-                "code": 500
-            }
-        )
-
 @router.post("/hospitals", response_model=HospitalSchema)
 async def create_hospital(
     hospital_data: HospitalCreate,
@@ -222,6 +186,43 @@ async def get_all_hospitals(
             status_code=500,
             detail={
                 "error": f"Error fetching hospitals: {str(e)}",
+                "code": 500
+            }
+        )
+
+
+@router.get("/{hospital_id}", response_model=HospitalSchema)
+async def get_hospital_by_id(
+    hospital_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get hospital information by hospital_id.
+    Returns hospital's details.
+    """
+    try:
+        hospital = db.query(Hospital)\
+            .filter(Hospital.hospital_id == hospital_id)\
+            .first()
+
+        if not hospital:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": f"Hospital with ID {hospital_id} not found",
+                    "code": 404
+                }
+            )
+
+        return hospital
+
+    except HTTPException as http_ex:
+        raise http_ex
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": f"Error fetching hospital: {str(e)}",
                 "code": 500
             }
         )

@@ -179,6 +179,49 @@ def test_signup_doctors():
             print(f"Response: {response.json()}\n")
         except Exception as e:
             print(f"Error signing up doctor {doctor['username']}: {str(e)}\n")
+import requests
+
+def get_all_hospitals(token: str):
+    try:
+        # Hard code URL giống lệnh curl
+        url = "http://127.0.0.1:8000/api/hospital/"
+        headers = {
+            'Authorization': f'Bearer {token}'
+        }
+        
+        print(f"Gửi yêu cầu GET đến {url}")
+        
+        response = requests.get(url, headers=headers, timeout=30)
+        
+        # In phản hồi HTTP
+        print("Mã trạng thái:", response.status_code)
+        print("Nội dung phản hồi:", response.text)
+        
+        # Kiểm tra lỗi
+        response.raise_for_status()
+        
+        # Phân tích JSON phản hồi
+        hospitals = response.json()
+        
+        # Chuyển đổi danh sách bệnh viện thành chuỗi dễ đọc
+        hospital_list = "\n".join(
+            [f"ID: {h['hospital_id']}, Tên: {h['hospital_name']}, Địa chỉ: {h['hospital_address']}" for h in hospitals]
+        )
+
+        return hospital_list
+    except requests.exceptions.RequestException as e:
+        print(f"Lỗi khi lấy danh sách bệnh viện: {str(e)}")
+        return {"error": f"Lỗi khi lấy danh sách bệnh viện: {str(e)}"}
 
 if __name__ == "__main__":
-    test_signup_doctors()
+    # Thay token của bạn vào đây
+    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsImV4cCI6MTczNjE1NjAxOH0.9QWhRvkQSiey5DVpMwPdGUIGsHTLaLm_xVcH4o1djtc"
+    
+    # Gọi hàm và in kết quả
+    result = get_all_hospitals(token)
+    print("\nKết quả nhận được:")
+    print(result)
+
+
+# if __name__ == "__main__":
+#     test_signup_doctors()
