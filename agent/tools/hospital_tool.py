@@ -17,6 +17,8 @@ BASE_URL = "http://localhost:80/api"
 
 class HospitalTool:
     def __init__(self):
+        self._token_provider = None
+
         self.get_all_hospitals = FunctionTool.from_defaults(
             fn=self.get_all_hospitals_fn,
             description="Lấy danh sách tất cả các bệnh viện."
@@ -42,10 +44,20 @@ class HospitalTool:
             description="Đặt lịch hẹn mới. Truyền vào thông tin cần thiết."
         )
 
+    def set_token_provider(self, provider):
+        """Set the function that will provide the token"""
+        self._token_provider = provider
+
+    def get_token(self):
+        """Get the current token from the provider"""
+        if self._token_provider:
+            return self._token_provider()
+        return None
+
     def get_all_hospitals_fn(self, token: str) -> Union[str, dict]:
         try:
-            # token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsImV4cCI6MTczNjE1NjAxOH0.9QWhRvkQSiey5DVpMwPdGUIGsHTLaLm_xVcH4o1djtc"
-            # Hard code URL giống lệnh curl
+            token = self.get_token()  # Gets token via provider
+
             url = "http://127.0.0.1:8000/api/hospitals/"
             headers = {
                 'Authorization': f'Bearer {token}'

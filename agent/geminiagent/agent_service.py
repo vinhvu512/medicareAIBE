@@ -1,6 +1,4 @@
 from fastapi.security import OAuth2PasswordBearer
-
-from geminiagent.llm_service import LLMService
 from tools.weather_tool import WeatherTool
 from tools.stock_tool import StockTool
 
@@ -10,13 +8,12 @@ from tools.hospital_tool import HospitalTool
 from llama_index.core.agent import ReActAgent
 from typing import List, Dict
 import logging
-# from geminiagent.token_context import current_token  # Import the context variable
+from llama_index.llms.gemini import Gemini
 
 class AgentService:
     def __init__(self):
         # Initialize LLM service and get the model
-        llm_service = LLMService()
-        self.llm = llm_service.get_model()
+        self.llm = Gemini(model="models/gemini-1.5-flash",api_key="AIzaSyDg9KyiwLv6w_oYP8mNSPbkXH0Syr-cvSk")
         
         # Initialize individual tools
         self.weather_tool = WeatherTool().tool
@@ -24,7 +21,9 @@ class AgentService:
         # self.user_tool = UserTool().tool
         
         # Initialize HospitalTool and its individual FunctionTools
-        hospital_tool_instance = HospitalTool()
+
+        self.hospital_tool_instance = hospital_tool_instance = HospitalTool()
+        self.hospital_tool_instance.set_token_provider(lambda: self.token)
         self.get_all_hospitals = hospital_tool_instance.get_all_hospitals
         self.search_hospitals = hospital_tool_instance.search_hospitals
         self.search_departments = hospital_tool_instance.search_departments
@@ -49,15 +48,19 @@ class AgentService:
         self.chat_history: List[Dict[str, str]] = []
         self.max_history = 10
         self.agent = None  # Ensure each instance has its own agent
+        self.token = None
         
-    def set_base_prompt(self, prompt: str, token: str):
+    def set_base_prompt(self, prompt: str, token: str = None):
         """Set the base personality prompt for the agent, including the token"""
         if not prompt or not isinstance(prompt, str):
             raise ValueError("Invalid prompt format - must be non-empty string")
         
+        if token:
+            self.token = token
+        
         # Combine base_prompt with token
         self.base_prompt = prompt.strip()
-        self.context = f"{self.base_prompt}\nMY_API_TOKEN is: {token}"
+        self.context = f"{self.base_prompt}"
         
         print(f"Base prompt set: {self.base_prompt}")
         print(f"Context set with token: {self.context}")
@@ -74,21 +77,27 @@ class AgentService:
         except Exception as e:
             raise ValueError(f"Failed to initialize agent with new prompt: {str(e)}")
     
-    def chat(self, query: str) -> str:
+    def chat(self, query: str, token: str) -> str:
+        print("DAO DUY DAT: ",self.agent)
         try:
+            if not self.agent:
+                print("Agent chưa được khởi tạo.")
+                return "Agent chưa được khởi tạo."
+            
+            # In thông tin memory và chat history trước khi chat
+            if hasattr(self.agent, 'memory'):
+                print("Thông tin memory:")
+                print(self.agent.memory)  # Hoặc self.agent.memory.state nếu cần chi tiết
+            
+            if hasattr(self.agent, 'chat_history'):
+                print("Lịch sử chat hiện tại:")
+                for msg in self.agent.chat_history:
+                    print(f"{msg.role}: {msg.content}")
             if not query or not isinstance(query, str):
                 raise ValueError("Invalid query format")
 
-            # # Set the token in the context
-            # token_token = current_token.set(token)
-            # print(token)
-            
-            # # Append token info to base_prompt
-            # temp = f"MY_API_TOKEN is: {token}"
-            # if self.base_prompt:
-            #     self.base_prompt += f"\n{temp}"
-            # else:
-            #     self.base_prompt = temp
+            # Set token to Agent
+            self.token = token
 
             # Manage chat history
             if len(self.chat_history) >= self.max_history:
@@ -116,38 +125,3 @@ class AgentService:
         except Exception as e:
             logging.error(f"Chat error: {str(e)}")
             raise
-        # finally:
-        #     # Reset the token in the context
-        #     current_token.reset(token_token)
-
-
-
-
-# agent_service = AgentService()
-
-# from fastapi import HTTPException, Request
-# from jose import jwt, JWTError
-
-# SECRET_KEY = "your-secret-key"
-# ALGORITHM = "HS256"
-
-# def get_current_user(request: Request):
-#     token = request.headers.get("Authorization")
-    
-#     if not token:
-#         raise HTTPException(
-#             status_code=401, 
-#             detail="No token provided"
-#         )
-
-#     # Extract the token value, skipping "Bearer " prefix if present
-#     token = token.replace("Bearer ", "") if token.startswith("Bearer ") else token
-    
-#     try:
-#         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-#         return payload
-#     except JWTError:
-#         raise HTTPException(
-#             status_code=401,
-#             detail="Invalid token"
-#         )

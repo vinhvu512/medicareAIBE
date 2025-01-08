@@ -170,7 +170,7 @@ async def chat_agent(
 
     agent = get_or_create_agent(current_user.user_id, agent_id)
     try:
-        response = agent.chat(request.query)
+        response = agent.chat(request.query, token)
         return JSONResponse(content={"response": response})
     except Exception as e:
         logging.error(f"Chat error: {str(e)}")
