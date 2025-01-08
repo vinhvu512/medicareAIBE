@@ -14,6 +14,7 @@ async def get_current_user_info(
     """Get current user information based on token"""
     try:
         return {
+            "user_id": current_user.user_id,
             "username": current_user.username,
             "email": current_user.email,
             "user_type": current_user.user_type,
