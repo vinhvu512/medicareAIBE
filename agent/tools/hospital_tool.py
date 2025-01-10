@@ -35,7 +35,7 @@ class HospitalTool:
         # Lấy danh sách tất cả các bệnh viện.
         self.get_all_hospitals = FunctionTool.from_defaults(
             fn=self.get_all_hospitals_fn,
-            description="Lấy danh sách tất cả các bệnh viện hiện có. Không yêu cầu tham số."
+            description="Lấy danh sách tất cả các bệnh viện hiện có. Không yêu cầu tham số. "
         )
 
         # Tìm kiếm bệnh viện theo từ khóa.
@@ -74,7 +74,7 @@ class HospitalTool:
                 "- 'doctor_id' (int): ID bác sĩ. "
                 "- 'patient_id' (int): ID bệnh nhân. "
                 "- 'appointment_day' (str): Ngày hẹn (định dạng YYYY-MM-DD). "
-                "- 'appointment_shift' (int): Ca hẹn. "
+                "- 'appointment_shift' (int): Ca hẹn. Mỗi ngày sẽ có 20 ca hẹn được đánh số từ 0 đến 19, khoảng thời gian khám mỗi ca là 30 phút. Ca từ 0 đến 9 là ca buổi sáng bắt đầu từ lúc 7h30 (ca 0) và kết thúc lúc 12h30 (ca 9). Ca từ 10 đến 19 là ca buổi chiều bắt đầu từ lúc 13h30 (ca 10) và kết thúc lúc 18h30 (ca 19). Bạn hãy từ các số int mà tự quy ra khung giờ trong ngày và ngược lại."
                 "- 'reason' (str): Lý do hẹn."
             )
         )
@@ -92,7 +92,7 @@ class HospitalTool:
     def get_all_hospitals_fn(self) -> Union[str, dict]:
         try:
             token = self.get_token()
-            url = f"{BASE_URL}/hospitals/"
+            url = f"{BASE_URL}/hospitals"
             headers = {'Authorization': f'Bearer {token}'}
 
             print(f"Gửi yêu cầu GET đến {url}")
@@ -103,10 +103,10 @@ class HospitalTool:
             response.raise_for_status()
 
             hospitals = response.json()
-            hospital_list = "\n".join(
-                [f"ID: {h['hospital_id']}, Tên: {h['hospital_name']}, Địa chỉ: {h['hospital_address']}" for h in hospitals]
-            )
-            return hospital_list
+            # hospital_list = "\n".join(
+            #     [f"ID: {h['hospital_id']}, Tên: {h['hospital_name']}, Địa chỉ: {h['hospital_address']}" for h in hospitals]
+            # )
+            return hospitals
         except requests.RequestException as e:
             print(f"Lỗi khi lấy danh sách bệnh viện: {str(e)}")
             return {"error": f"Lỗi khi lấy danh sách bệnh viện: {str(e)}"}
@@ -177,7 +177,7 @@ class HospitalTool:
     def get_available_appointments_fn(self, hospital_id: int, department_id: int, doctor_id: int) -> Union[List[dict], dict]:
         try:
             token = self.get_token()
-            url = f"{BASE_URL}/available-appointments"
+            url = f"{BASE_URL}/appointments/available-appointments"
             headers = {'Authorization': f'Bearer {token}'}
             params = {
                 'hospital_id': hospital_id,

@@ -20,15 +20,15 @@ class HospitalAPI:
             # Kiểm tra lỗi
             response.raise_for_status()
             
-            # Phân tích JSON phản hồi
-            hospitals = response.json()
+            # # Phân tích JSON phản hồi
+            # hospitals = response.json()
             
-            # Chuyển đổi danh sách bệnh viện thành chuỗi dễ đọc
-            hospital_list = "\n".join(
-                [f"ID: {h['hospital_id']}, Tên: {h['hospital_name']}, Địa chỉ: {h['hospital_address']}" for h in hospitals]
-            )
+            # # Chuyển đổi danh sách bệnh viện thành chuỗi dễ đọc
+            # hospital_list = "\n".join(
+            #     [f"ID: {h['hospital_id']}, Tên: {h['hospital_name']}, Địa chỉ: {h['hospital_address']}" for h in hospitals]
+            # )
 
-            return hospital_list
+            return response
         except requests.exceptions.RequestException as e:
             return f"Lỗi khi gửi yêu cầu: {str(e)}"
 
