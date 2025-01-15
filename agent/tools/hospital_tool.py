@@ -14,7 +14,7 @@ from typing import List, Union
 # from llama_index.tools.requests import RequestsToolSpec
 
 
-BASE_URL = "http://127.0.0.1:8000/api"
+BASE_URL = "http://127.0.0.1:80/api"
 
 class HospitalTool:
     def __init__(self):

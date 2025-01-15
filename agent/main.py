@@ -27,7 +27,7 @@ logging.basicConfig(level=logging.INFO)
 # Cấu hình ứng dụng FastAPI
 app = FastAPI()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://localhost:8000/api/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://localhost:80/api/auth/login")
 
 # Cấu hình CORS
 app.add_middleware(
@@ -114,7 +114,7 @@ Core Rules:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={"error": "Invalid agent ID", "code": 400}
             )
-        
+
         print("break 2")
 
         # Lấy hoặc tạo agent cho user và agent_id
@@ -193,4 +193,4 @@ async def logout(current_user: str = Depends(get_current_user)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=80, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
