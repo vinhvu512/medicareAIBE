@@ -9,6 +9,8 @@ import os
 import asyncio
 from dotenv import load_dotenv
 
+from apis.authenticate.authenticate import get_current_user, verify_token
+from agent.main import get_or_create_agent  # Import the missing function
 load_dotenv()
 
 app = FastAPI()
@@ -74,29 +76,58 @@ def process_message(message: str):
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
-        while True:
-            data = await websocket.receive_text()
-            try:
-                message = json.loads(data)
-                print("Receive Message: ", message)
-                if message['type'] == 'location':
-                    latitude = message['latitude']
-                    longitude = message['longitude']
-                    traffic_status = check_traffic(latitude, longitude)
-                    if traffic_status == 'heavy':
-                        alert_message = json.dumps({
-                            "type": "traffic_alert",
-                            "message": "Cảnh báo: Đoạn đường sắp tới đang kẹt xe."
-                        })
-                        await manager.send_personal_message(alert_message, websocket)
-                elif message['type'] == 'text':
-                    response = process_message(message['text'])
+        # Get current user from token
+        token = websocket.headers.get("Authorization")
+        if not token:
+            await websocket.close(code=4001, reason="Missing authentication token")
+            return
+            
+        try:
+            # Get user from token
+            current_user = get_current_user(token)
+            if not current_user:
+                await websocket.close(code=4002, reason="Invalid authentication")
+                return
+                
+            # Create agent for this user (using agent 1)
+            agent = get_or_create_agent(current_user.user_id, 1)
+            
+            while True:
+                data = await websocket.receive_text()
+                try:
+                    message = json.loads(data)
+                    print("Receive Message: ", message)
+                    
+                    # Check if message is location data
+                    if 'type' in message and message['type'] == 'location':
+                        # Handle location message
+                        latitude = message['latitude']
+                        longitude = message['longitude']
+                        traffic_status = check_traffic(latitude, longitude)
+                        if traffic_status == 'heavy':
+                            alert_message = json.dumps({
+                                "type": "traffic_alert", 
+                                "message": "Cảnh báo: Đoạn đường sắp tới đang kẹt xe."
+                            })
+                            C
+                            agent.setMem("traffic_alert", "true")
+                            await manager.send_personal_message(alert_message, websocket)
+                    else:
+                        # All other messages handled by agent
+                        response = agent.chat(data, token)
+                        if response:
+                            await manager.send_personal_message(response, websocket)
+                            
+                except json.JSONDecodeError:
+                    # Handle plain text message using agent
+                    response = agent.chat(data, token)
                     if response:
                         await manager.send_personal_message(response, websocket)
-            except json.JSONDecodeError:
-                response = process_message(data)
-                if response:
-                    await manager.send_personal_message(response, websocket)
+                        
+        except Exception as e:
+            await websocket.close(code=4003, reason=f"Error: {str(e)}")
+            return
+            
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 

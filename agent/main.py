@@ -191,6 +191,6 @@ async def logout(current_user: str = Depends(get_current_user)):
         logging.info(f"All agents for user {current_user} have been deleted.")
     return response
 
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
