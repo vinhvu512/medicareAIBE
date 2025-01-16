@@ -3,13 +3,15 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 import json
-import whisper
+from deepgram import DeepgramClient, PrerecordedOptions, FileSource
+import os
+import asyncio
 
 app = FastAPI()
 
-# Cấu hình CORS để cho phép frontend kết nối
+# CORS Configuration to allow frontend connections
 origins = [
-    "*",  # Trong sản phẩm thực tế, hãy chỉ định domain cụ thể
+    "*",  # In production, specify the exact domains
 ]
 
 app.add_middleware(
@@ -20,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Quản lý các kết nối WebSocket
+# Manage WebSocket connections
 class ConnectionManager:
     def __init__(self):
         self.active_connections: list[WebSocket] = []
@@ -43,11 +45,12 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# Tải mô hình Whisper
-model = whisper.load_model("base")  # Bạn có thể chọn các mô hình khác như "tiny", "small", "medium", "large"
+# Initialize Deepgram Client
+DEEPGRAM_API_KEY = "YOUR_DEEPGRAM_API_KEY"  # Replace with your actual Deepgram API key
+deepgram = DeepgramClient(api_key=DEEPGRAM_API_KEY)
 
 def check_traffic(latitude, longitude):
-    # Triển khai logic kiểm tra giao thông thực tế
+    # Implement real traffic checking logic
     if int(latitude * 100) % 2 == 1:
         return "heavy"
     return "smooth"
@@ -91,33 +94,39 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.post("/speech-to-text")
 async def speech_to_text(file: UploadFile = File(...)):
     try:
-        # Đọc nội dung tệp âm thanh
+        # Read the uploaded audio file
         audio_bytes = await file.read()
 
-        # Lưu file tạm thời để Whisper có thể xử lý
-        temp_file = "temp_audio.wav"
-        with open(temp_file, "wb") as f:
-            f.write(audio_bytes)
+        # Prepare the file source for Deepgram
+        payload: FileSource = {
+            "buffer": audio_bytes,
+        }
 
-        # Sử dụng Whisper để chuyển đổi âm thanh thành văn bản
-        result = model.transcribe(temp_file, language="vi")
+        # Set transcription options
+        options = PrerecordedOptions(
+            model="nova-2",       # Use appropriate model as per Deepgram's documentation
+            language="vi",        # Vietnamese language code
+            smart_format=True,    # Enables smart formatting
+        )
 
-        # Kiểm tra kết quả trả về
-        if isinstance(result, dict) and "text" in result:
-            transcript = result["text"]
+        # Perform transcription using Deepgram
+        response = await deepgram.transcription.pre_recorded(payload, options)
+
+        # Extract the transcript from the response
+        if 'results' in response and 'channels' in response['results']:
+            transcript = ""
+            for channel in response['results']['channels']:
+                for alternative in channel.get('alternatives', []):
+                    transcript += alternative.get('transcript', '') + " "
+            transcript = transcript.strip()
         else:
             transcript = ""
-
-        # Xóa file tạm
-        import os
-        if os.path.exists(temp_file):
-            os.remove(temp_file)
 
         return {"text": transcript}
     except Exception as e:
         print(f"Error in speech_to_text: {e}")
         return {"text": ""}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=4000, reload=True)
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run("main:app", host="0.0.0.0", port=4000, reload=True)
