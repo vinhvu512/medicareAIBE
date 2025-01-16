@@ -125,7 +125,7 @@ async def create_appointment(
         new_appointment = Appointment(
             hospital_id=appointment.hospital_id,
             department_id=appointment.department_id,
-            room_id=appointment.room_id,
+            room_id=appointment.doctor_id-49,
             doctor_id=appointment.doctor_id,
             patient_id=appointment.patient_id,
             appointment_day=appointment.appointment_day,

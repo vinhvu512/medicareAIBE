@@ -27,7 +27,6 @@ class HospitalTool:
         - Tìm kiếm bác sĩ trong khoa của một bệnh viện cụ thể.
         - Lấy danh sách lịch hẹn có sẵn cho một bác sĩ.
         - Tạo lịch hẹn mới.
-
         Các phương thức được triển khai thông qua `FunctionTool` để dễ dàng tích hợp vào hệ thống.
         """
         self._token_provider = None  # Bộ cung cấp token xác thực.
@@ -126,6 +125,8 @@ class HospitalTool:
             response.raise_for_status()
 
             hospitals = response.json()
+            print(type(hospitals))
+            print(hospitals)
             return hospitals
         except requests.RequestException as e:
             print(f"Lỗi khi tìm kiếm bệnh viện: {str(e)}")
