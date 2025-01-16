@@ -1,20 +1,14 @@
-# from llama_index.core.tools import FunctionTool
-# from sqlalchemy.orm import Session
-# from database.session import SessionLocal
-# from schemas.appointment import AppointmentCreate
-# from models.hospital import Hospital
-# from models.department import Department
-# from models.doctor import Doctor
-# from models.appointment import Appointment
-# from typing import List
 import requests
 class HospitalTool:import requests
 from llama_index.core.tools import FunctionTool
 from typing import List, Union
-# from llama_index.tools.requests import RequestsToolSpec
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
-BASE_URL = "http://127.0.0.1:80/api"
+BASE_URL = os.getenv("BASE_URL")
 
 class HospitalTool:
     def __init__(self):
@@ -27,6 +21,7 @@ class HospitalTool:
         - Tìm kiếm bác sĩ trong khoa của một bệnh viện cụ thể.
         - Lấy danh sách lịch hẹn có sẵn cho một bác sĩ.
         - Tạo lịch hẹn mới.
+
         Các phương thức được triển khai thông qua `FunctionTool` để dễ dàng tích hợp vào hệ thống.
         """
         self._token_provider = None  # Bộ cung cấp token xác thực.
@@ -66,15 +61,42 @@ class HospitalTool:
         self.create_appointment = FunctionTool.from_defaults(
             fn=self.create_appointment_fn,
             description=(
-                "Đặt lịch hẹn mới. Yêu cầu cung cấp các thông tin sau trong body request: "
-                "- 'hospital_id' (int): ID bệnh viện. "
-                "- 'department_id' (int): ID khoa. "
-                "- 'room_id' (int): ID phòng khám. "
-                "- 'doctor_id' (int): ID bác sĩ. "
-                "- 'patient_id' (int): ID bệnh nhân. "
-                "- 'appointment_day' (str): Ngày hẹn (định dạng YYYY-MM-DD). "
-                "- 'appointment_shift' (int): Ca hẹn. Mỗi ngày sẽ có 20 ca hẹn được đánh số từ 0 đến 19, khoảng thời gian khám mỗi ca là 30 phút. Ca từ 0 đến 9 là ca buổi sáng bắt đầu từ lúc 7h30 (ca 0) và kết thúc lúc 12h30 (ca 9). Ca từ 10 đến 19 là ca buổi chiều bắt đầu từ lúc 13h30 (ca 10) và kết thúc lúc 18h30 (ca 19). Bạn hãy từ các số int mà tự quy ra khung giờ trong ngày và ngược lại."
-                "- 'reason' (str): Lý do hẹn."
+                "Create a new appointment. Requires the following information in the request body:\n"
+                "- 'hospital_id' (int): ID of the hospital.\n"
+                "- 'department_id' (int): ID of the department.\n"
+                "- 'doctor_id' (int): ID of the doctor.\n"
+                "- 'patient_id' (int): ID of the patient.\n"
+                "- 'appointment_day' (str): Appointment date in 'YYYY-MM-DD' format.\n"
+                "- 'appointment_shift' (int): Shift number (0-19). Each day has 20 shifts of 30 minutes each:\n"
+                "  * Shifts 0-9: Morning, starting at 7:30 AM (shift 0) and ending at 12:30 PM (shift 9).\n"
+                "  * Shifts 10-19: Afternoon, starting at 1:30 PM (shift 10) and ending at 6:30 PM (shift 19).\n"
+                "- 'reason' (str): Reason for the appointment.\n\n"
+                "Example request body: It's raw dictionary, don't have AttributedDict\n"
+                "{\n"
+                "  'hospital_id': 1,\n"
+                "  'department_id': 2,\n"
+                "  'doctor_id': 15,\n"
+                "  'patient_id': 7,\n"
+                "  'appointment_day': '2025-01-23',\n"
+                "  'appointment_shift': 8,\n"
+                "  'reason': 'Routine check-up'\n"
+                "}"
+            )
+)
+        self.request_create = FunctionTool.from_defaults(
+            fn=self.request_create,
+            description=(
+                """
+                Nhắc lại thông tin người dùng đã cung cấp và yêu cầu xác nhận trước khi tạo lịch hẹn.
+                    appointment_data (dict): Bao gồm các thông tin cần thiết để tạo lịch hẹn:
+                    - hospital_id (int)
+                    - department_id (int)
+                    - doctor_id (int)
+                    - patient_id (int)
+                    - appointment_day (str, format YYYY-MM-DD)
+                    - appointment_shift (int)
+                    - reason (str)
+                """
             )
         )
 
@@ -102,10 +124,10 @@ class HospitalTool:
             response.raise_for_status()
 
             hospitals = response.json()
-            # hospital_list = "\n".join(
-            #     [f"ID: {h['hospital_id']}, Tên: {h['hospital_name']}, Địa chỉ: {h['hospital_address']}" for h in hospitals]
-            # )
-            return hospitals
+            hospital_list = "\n".join(
+                [f"Hospital ID: {h['hospital_id']}, Tên: {h['hospital_name']}" for h in hospitals]
+            )
+            return hospital_list
         except requests.RequestException as e:
             print(f"Lỗi khi lấy danh sách bệnh viện: {str(e)}")
             return {"error": f"Lỗi khi lấy danh sách bệnh viện: {str(e)}"}
@@ -125,9 +147,10 @@ class HospitalTool:
             response.raise_for_status()
 
             hospitals = response.json()
-            print(type(hospitals))
-            print(hospitals)
-            return hospitals
+            hospital_list = "\n".join(
+                [f"Hospital ID: {h['hospital_id']}, Tên: {h['hospital_name']}" for h in hospitals]
+            )
+            return hospital_list
         except requests.RequestException as e:
             print(f"Lỗi khi tìm kiếm bệnh viện: {str(e)}")
             return {"error": f"Lỗi khi tìm kiếm bệnh viện: {str(e)}"}
@@ -147,12 +170,18 @@ class HospitalTool:
             response.raise_for_status()
 
             departments = response.json()
-            return departments
+            department_list = "\n".join(
+                [f"Department ID: {d['department_id']}, Tên: {d['department_name']}" for d in departments]
+            )
+            return department_list
         except requests.RequestException as e:
             print(f"Lỗi khi tìm kiếm khoa: {str(e)}")
             return {"error": f"Lỗi khi tìm kiếm khoa: {str(e)}"}
-
-    def search_doctors_fn(self, hospital_id: int, department_id: int) -> Union[List[dict], dict]:
+    def search_doctors_fn(self, hospital_id: int, department_id: int) -> Union[List[str], dict]:
+        """
+        Tìm kiếm bác sĩ theo bệnh viện và khoa. Trả về danh sách các bác sĩ dưới dạng chuỗi
+        định dạng 'Doctor ID: {user_id}, Tên: {fullname}'.
+        """
         try:
             token = self.get_token()
             url = f"{BASE_URL}/doctors/search"
@@ -170,10 +199,17 @@ class HospitalTool:
             response.raise_for_status()
 
             doctors = response.json()
-            return doctors
+
+            # Format output as requested
+            formatted_doctors = [
+                f"Doctor ID: {doctor['user_id']}, Tên: {doctor['fullname']}" 
+                for doctor in doctors
+            ]
+            return formatted_doctors
         except requests.RequestException as e:
             print(f"Lỗi khi tìm kiếm bác sĩ: {str(e)}")
             return {"error": f"Lỗi khi tìm kiếm bác sĩ: {str(e)}"}
+
 
     def get_available_appointments_fn(self, hospital_id: int, department_id: int, doctor_id: int) -> Union[List[dict], dict]:
         try:
@@ -198,19 +234,73 @@ class HospitalTool:
         except requests.RequestException as e:
             print(f"Lỗi khi lấy lịch hẹn có sẵn: {str(e)}")
             return {"error": f"Lỗi khi lấy lịch hẹn có sẵn: {str(e)}"}
+    def request_create(self, appointment_data: dict) -> str:
+        # Extract and format details for confirmation
+        hospital_id = appointment_data.get("hospital_id")
+        department_id = appointment_data.get("department_id")
+        doctor_id = appointment_data.get("doctor_id")
+        patient_id = appointment_data.get("patient_id")
+        appointment_day = appointment_data.get("appointment_day")
+        appointment_shift = appointment_data.get("appointment_shift")
+        reason = appointment_data.get("reason")
+
+        shift_time = (
+            f"{7 + (appointment_shift // 2)}:{'30' if appointment_shift % 2 else '00'} AM"
+            if appointment_shift < 10
+            else f"{1 + ((appointment_shift - 10) // 2)}:{'30' if appointment_shift % 2 else '00'} PM"
+        )
+
+        confirmation_message = (
+            f"Thông tin lịch hẹn của bạn:\n"
+            f"- Bệnh viện ID: {hospital_id}\n"
+            f"- Khoa ID: {department_id}\n"
+            f"- Bác sĩ ID: {doctor_id}\n"
+            f"- Bệnh nhân ID: {patient_id}\n"
+            f"- Ngày hẹn: {appointment_day}\n"
+            f"- Ca hẹn: {appointment_shift} (thời gian: {shift_time})\n"
+            f"- Lý do: {reason}\n"
+            "Bạn có muốn xác nhận tạo lịch hẹn này không? (yes/no)"
+        )
+
+        print(confirmation_message)
+
+        # Assuming we get user input directly here
+        user_confirmation = input("Nhập 'yes' để xác nhận, hoặc 'no' để hủy: ").strip().lower()
+
+        if user_confirmation == 'yes':
+            # Proceed to create appointment
+            return self.create_appointment_fn(appointment_data)
+        else:
+            return "Lịch hẹn đã bị hủy bởi người dùng."
+
     def create_appointment_fn(self, appointment_data: dict) -> Union[str, dict]:
         """
-        Tạo lịch hẹn mới. 
+        Tạo lịch hẹn mới.
         Dữ liệu đầu vào:
         - hospital_id (int)
-        - department_id (int)
+        - department_id (int) 
         - doctor_id (int)
         - patient_id (int)
-        - appointment_day (str, format YYYY-MM-DD)
+        - appointment_day (str, format YYYY-MM-DD)  
         - appointment_shift (int)
         - reason (str)
         """
         try:
+            # Extract data from AttributedDict wrapper if present
+            if isinstance(appointment_data, dict) and 'appointment_data' in appointment_data:
+                appointment_data = dict(appointment_data['appointment_data'])
+
+            # Validate required fields
+            required_fields = ['hospital_id', 'department_id', 'doctor_id', 
+                            'patient_id', 'appointment_day', 'appointment_shift', 'reason']
+            
+            for field in required_fields:
+                if appointment_data.get(field) is None:
+                    return {"error": f"Thiếu thông tin bắt buộc: {field}"}
+
+            # Add status field
+            appointment_data['status'] = 'Scheduled'
+
             token = self.get_token()
             url = f"{BASE_URL}/appointments"
             headers = {
@@ -226,8 +316,7 @@ class HospitalTool:
             response.raise_for_status()
 
             result = response.json()
-            # Assuming API trả về message thành công hoặc ID của lịch hẹn
-            return result.get('message', f"Lịch hẹn đã được tạo thành công với ID {result.get('id', 'Unknown')}.")
+            return result.get('message', f"Lịch hẹn đã được tạo thành công.")
         except requests.RequestException as e:
             print(f"Lỗi khi tạo lịch hẹn: {str(e)}")
             return {"error": f"Lỗi khi tạo lịch hẹn: {str(e)}"}

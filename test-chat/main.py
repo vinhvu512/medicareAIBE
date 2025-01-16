@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # backend/main.py
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile
@@ -6,6 +7,9 @@ import json
 from deepgram import DeepgramClient, PrerecordedOptions, FileSource
 import os
 import asyncio
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -45,9 +49,14 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+from deepgram import Deepgram
+
 # Initialize Deepgram Client
-DEEPGRAM_API_KEY = "YOUR_DEEPGRAM_API_KEY"  # Replace with your actual Deepgram API key
-deepgram = DeepgramClient(api_key=DEEPGRAM_API_KEY)
+DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
+if not DEEPGRAM_API_KEY:
+    raise ValueError("DEEPGRAM_API_KEY environment variable is not set")
+  
+deepgram = DeepgramClient()
 
 def check_traffic(latitude, longitude):
     # Implement real traffic checking logic
@@ -94,39 +103,53 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.post("/speech-to-text")
 async def speech_to_text(file: UploadFile = File(...)):
     try:
-        # Read the uploaded audio file
+        # Đọc file audio từ upload
         audio_bytes = await file.read()
 
-        # Prepare the file source for Deepgram
-        payload: FileSource = {
-            "buffer": audio_bytes,
-        }
-
-        # Set transcription options
+        # Chuẩn bị payload và options
+        payload: FileSource = {"buffer": audio_bytes}
         options = PrerecordedOptions(
-            model="nova-2",       # Use appropriate model as per Deepgram's documentation
-            language="vi",        # Vietnamese language code
-            smart_format=True,    # Enables smart formatting
+            model="nova-2",        # Hoặc mô hình phù hợp
+            language="vi",         # Tiếng Việt
+            smart_format=True,     # Định dạng thông minh
         )
 
-        # Perform transcription using Deepgram
-        response = await deepgram.transcription.pre_recorded(payload, options)
+        file_response = deepgram.listen.rest.v("1").transcribe_file(payload, options)
+        response_dict = file_response.to_dict()
 
-        # Extract the transcript from the response
-        if 'results' in response and 'channels' in response['results']:
-            transcript = ""
-            for channel in response['results']['channels']:
-                for alternative in channel.get('alternatives', []):
-                    transcript += alternative.get('transcript', '') + " "
-            transcript = transcript.strip()
-        else:
-            transcript = ""
+        # Extract main transcript and metadata
+        channel = response_dict.get('results', {}).get('channels', [])[0]
+        alternative = channel.get('alternatives', [])[0]
+        transcript = alternative.get('transcript', '')
+        confidence = alternative.get('confidence', 0)
+        duration = response_dict.get('metadata', {}).get('duration', 0)
+        
+        # Extract word-level details
+        words = [{
+            'word': w.get('punctuated_word', ''),
+            'start': w.get('start', 0),
+            'end': w.get('end', 0),
+            'confidence': w.get('confidence', 0)
+        } for w in alternative.get('words', [])]
 
-        return {"text": transcript}
+        return {
+            "text": transcript,
+            "confidence": confidence,
+            "duration": duration,
+            "words": words
+        }
+
     except Exception as e:
-        print(f"Error in speech_to_text: {e}")
-        return {"text": ""}
+        print(f"Error in speech_to_text: {str(e)}")
+        return {
+            "text": "",
+            "confidence": 0,
+            "duration": 0,
+            "words": []
+        }
 
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run("main:app", host="0.0.0.0", port=4000, reload=True)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=4000, reload=True)
