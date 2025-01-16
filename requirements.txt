@@ -12,3 +12,5 @@ alembic
 fastapi-socketio
 deepgram-sdk
 pyaudio==0.2.14
+passlib
+python-jose
