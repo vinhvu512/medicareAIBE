@@ -3,12 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from apis.signup.signup_router import router as signup_router
 from apis.login.login_router import router as login_router
 from apis.test_token.test_token_router import router as test_token_router
-from apis.user.user_router import router as user_router
-from apis.hospital.hospital_router import router as hospital_router
+from apis.users.users_router import router as users_router
+from apis.hospitals.hospitals_router import router as hospitals_router
 from apis.appointments.appointments_router import router as appointments_router
 from apis.relationships.relationships_router import router as relationships_router
-from apis.doctor.doctor_router import router as doctor_router
-from apis.department.department_router import router as department_router
+from apis.doctors.doctors_router import router as doctors_router
+from apis.departments.departments_router import router as departments_router
+from apis.clinic_rooms.clinic_rooms_router import router as clinic_rooms_router
+from apis.mapbox.mapbox_router import router as mapbox_router
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -31,13 +33,15 @@ app.add_middleware(
 app.include_router(signup_router, prefix="/api/auth", tags=["signup"])
 app.include_router(login_router, prefix="/api/auth", tags=["login"])
 app.include_router(test_token_router, prefix="/api/auth", tags=["test_token"])
-app.include_router(user_router, prefix="/api/auth", tags=["user"])
-app.include_router(hospital_router, prefix="/api/hospital", tags=["hospitals"])
-app.include_router(appointments_router, prefix="/api", tags=["appointments"])
+app.include_router(users_router, prefix="/api/auth", tags=["user"])
+app.include_router(hospitals_router, prefix="/api/hospitals", tags=["hospitals"])
+app.include_router(appointments_router, prefix="/api/appointments", tags=["appointments"])
 app.include_router(relationships_router, prefix="/api/relationships", tags=["relationships"])
-app.include_router(doctor_router, prefix="/api/doctor", tags=["doctors"])
-app.include_router(department_router, prefix="/api/department", tags=["departments"])
+app.include_router(doctors_router, prefix="/api/doctors", tags=["doctors"])
+app.include_router(departments_router, prefix="/api/departments", tags=["departments"])
+app.include_router(clinic_rooms_router, prefix="/api/clinic-rooms", tags=["clinic_roooms"])
+app.include_router(mapbox_router, prefix="/api/mapbox", tags=["mapbox"])
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run("main:app", host="0.0.0.0", port=80, reload=True)

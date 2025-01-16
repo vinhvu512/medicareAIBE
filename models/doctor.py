@@ -1,6 +1,17 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, CheckConstraint, JSON
 from database.session import Base
 from sqlalchemy.orm import relationship
+from enum import Enum
+
+# Thêm định nghĩa WeekDay vào đây
+class WeekDay(str, Enum):
+    MONDAY = "Monday"
+    TUESDAY = "Tuesday" 
+    WEDNESDAY = "Wednesday"
+    THURSDAY = "Thursday"
+    FRIDAY = "Friday"
+    SATURDAY = "Saturday"
+    SUNDAY = "Sunday"
 
 class Doctor(Base):
     __tablename__ = "doctors"

@@ -15,7 +15,7 @@ class AppointmentBase(BaseModel):
     doctor_id: int
     patient_id: int
     appointment_day: date
-    appointment_shift: int  # Between 0-19
+    appointment_shift: int
     reason: str | None = None
     status: AppointmentStatusEnum = AppointmentStatusEnum.SCHEDULED
 

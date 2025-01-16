@@ -9,3 +9,9 @@ python-dotenv==1.0.1
 pydantic[email]
 psycopg2-binary
 alembic
+fastapi-socketio
+deepgram-sdk
+pyaudio==0.2.14
+passlib
+python-jose
+python-multipart

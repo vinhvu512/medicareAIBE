@@ -10,6 +10,9 @@ from models.relationships import DoctorHospital
 from pydantic import BaseModel
 from datetime import date
 
+from apis.authenticate.authenticate import get_current_patient
+from models.user import User
+
 router = APIRouter()
 
 # Create a new response model
@@ -30,64 +33,12 @@ class DoctorUserResponse(BaseModel):
     class Config:
         from_attributes = True
 
-@router.get("/{doctor_id}", response_model=DoctorUserResponse)
-async def get_doctor_by_id(
-    doctor_id: int,
-    db: Session = Depends(get_db)
-):
-    """
-    Get doctor information by doctor_id.
-    Returns doctor's details including user information.
-    """
-    try:
-        doctor = db.query(Doctor)\
-            .options(joinedload(Doctor.user))\
-            .filter(Doctor.doctor_id == doctor_id)\
-            .first()
-
-        if not doctor:
-            raise HTTPException(
-                status_code=404,
-                detail={
-                    "error": f"Doctor with ID {doctor_id} not found",
-                    "code": 404
-                }
-            )
-
-        # Transform the response to match DoctorUserResponse model
-        doctor_data = {
-            "user_id": doctor.user.user_id,
-            "username": doctor.user.username,
-            "email": doctor.user.email,
-            "user_type": doctor.user.user_type,
-            "fullname": doctor.user.fullname,
-            "date_of_birth": doctor.user.date_of_birth,
-            "gender": doctor.user.gender,
-            "address": doctor.user.address,
-            "phone": doctor.user.phone,
-            "profile_image": doctor.user.profile_image,
-            "doctor_specialty": doctor.doctor_specialty,
-            "doctor_experience": doctor.doctor_experience
-        }
-
-        return doctor_data
-
-    except HTTPException as http_ex:
-        raise http_ex
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": f"Error fetching doctor: {str(e)}",
-                "code": 500
-            }
-        )
-
-@router.get("/search/{hospital_id}/{department_id}", response_model=List[DoctorUserResponse])
+@router.get("/search", response_model=List[DoctorUserResponse])
 async def get_doctors_by_department(
-    hospital_id: int,
-    department_id: int,
-    db: Session = Depends(get_db)
+    hospital_id: int = Query(..., description="Hospital ID"),
+    department_id: int = Query(..., description="Department ID"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_patient)
 ):
     """
     Get all doctors working in a specific department at a specific hospital.
@@ -146,11 +97,11 @@ async def get_doctors_by_department(
             }
         )
     
-@router.put("/schedule/{doctor_id}", response_model=Dict)
+@router.put("/{doctor_id}/schedule", response_model=Dict)
 async def update_doctor_schedule(
     doctor_id: int,
     weekly_schedule: Dict[str, List[ShiftSchedule]],  # Change the type annotation
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Update a doctor's weekly schedule
@@ -214,6 +165,60 @@ async def update_doctor_schedule(
             status_code=500,
             detail={
                 "error": f"Failed to update schedule: {str(e)}",
+                "code": 500
+            }
+        )
+    
+@router.get("/{doctor_id}", response_model=DoctorUserResponse)
+async def get_doctor_by_id(
+    doctor_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_patient)
+):
+    """
+    Get doctor information by doctor_id.
+    Returns doctor's details including user information.
+    """
+    try:
+        doctor = db.query(Doctor)\
+            .options(joinedload(Doctor.user))\
+            .filter(Doctor.doctor_id == doctor_id)\
+            .first()
+
+        if not doctor:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": f"Doctor with ID {doctor_id} not found",
+                    "code": 404
+                }
+            )
+
+        # Transform the response to match DoctorUserResponse model
+        doctor_data = {
+            "user_id": doctor.user.user_id,
+            "username": doctor.user.username,
+            "email": doctor.user.email,
+            "user_type": doctor.user.user_type,
+            "fullname": doctor.user.fullname,
+            "date_of_birth": doctor.user.date_of_birth,
+            "gender": doctor.user.gender,
+            "address": doctor.user.address,
+            "phone": doctor.user.phone,
+            "profile_image": doctor.user.profile_image,
+            "doctor_specialty": doctor.doctor_specialty,
+            "doctor_experience": doctor.doctor_experience
+        }
+
+        return doctor_data
+
+    except HTTPException as http_ex:
+        raise http_ex
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": f"Error fetching doctor: {str(e)}",
                 "code": 500
             }
         )
