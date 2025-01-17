@@ -15,3 +15,4 @@ pyaudio==0.2.14
 passlib
 python-jose
 python-multipart
+bcrypt
