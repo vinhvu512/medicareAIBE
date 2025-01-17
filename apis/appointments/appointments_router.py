@@ -21,6 +21,7 @@ from schemas.doctor import WeekDay
 
 from apis.authenticate.authenticate import get_current_patient  # Add this import
 from models.user import User # Add this import
+from models.doctor import Doctor
 
 router = APIRouter()
 
@@ -135,10 +136,32 @@ async def create_appointment(
         )
 
         db.add(new_appointment)
+        db.flush()
         db.commit()
-        db.refresh(new_appointment)
 
-        return new_appointment
+        # Join với bảng User và Doctor để lấy thông tin bác sĩ
+        doctor_info = db.query(User, Doctor)\
+            .join(Doctor, User.user_id == Doctor.doctor_id)\
+            .filter(User.user_id == appointment.doctor_id)\
+            .first()
+
+        # Tạo response với thông tin bổ sung về bác sĩ
+        appointment_response = {
+            "appointment_id": new_appointment.appointment_id,
+            "hospital_id": new_appointment.hospital_id,
+            "department_id": new_appointment.department_id,
+            "doctor_id": new_appointment.doctor_id,
+            "doctor_fullname": doctor_info[0].fullname,  # Lấy từ User model
+            "doctor_specialty": doctor_info[1].doctor_specialty,  # Lấy từ Doctor model
+            "patient_id": new_appointment.patient_id,
+            "appointment_day": new_appointment.appointment_day,
+            "appointment_shift": new_appointment.appointment_shift,
+            "reason": new_appointment.reason,
+            "status": new_appointment.status
+        }
+
+        print("Debug ", appointment_response)
+        return appointment_response
 
     except HTTPException as http_ex:
         raise http_ex
@@ -163,7 +186,10 @@ async def get_user_appointments(
     """Get all appointments for a specific user"""
     try:
         # Build query
-        query = db.query(Appointment).filter(Appointment.patient_id == user_id)
+        query = db.query(Appointment, User, Doctor)\
+            .join(Doctor, Appointment.doctor_id == Doctor.doctor_id)\
+            .join(User, Doctor.doctor_id == User.user_id)\
+            .filter(Appointment.patient_id == user_id)
         
         if status:
             query = query.filter(Appointment.status == status)
@@ -173,10 +199,29 @@ async def get_user_appointments(
             query = query.filter(Appointment.appointment_day <= end_date)
 
         # Get results
-        appointments = query.order_by(
+        results = query.order_by(
             Appointment.appointment_day.asc(),
             Appointment.appointment_shift.asc()
         ).all()
+
+        # Format response with doctor info
+        appointments = []
+        for appointment, user, doctor in results:
+            appointment_data = {
+                "appointment_id": appointment.appointment_id,
+                "hospital_id": appointment.hospital_id,
+                "department_id": appointment.department_id,
+                "room_id": appointment.room_id,
+                "doctor_id": appointment.doctor_id,
+                "doctor_fullname": user.fullname,
+                "doctor_specialty": doctor.doctor_specialty,
+                "patient_id": appointment.patient_id,
+                "appointment_day": appointment.appointment_day,
+                "appointment_shift": appointment.appointment_shift,
+                "reason": appointment.reason,
+                "status": appointment.status
+            }
+            appointments.append(appointment_data)
 
         return appointments or []
 
@@ -199,11 +244,14 @@ async def get_available_appointments(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_patient)
 ):
-    print("doing")
     try:
-        # Get doctor's schedule
-        doctor = db.query(Doctor).filter(Doctor.doctor_id == doctor_id).first()
-        if not doctor:
+        # Get doctor's info with User join
+        doctor_info = db.query(Doctor, User)\
+            .join(User, Doctor.doctor_id == User.user_id)\
+            .filter(Doctor.doctor_id == doctor_id)\
+            .first()
+            
+        if not doctor_info:
             raise HTTPException(
                 status_code=404,
                 detail={
@@ -211,8 +259,8 @@ async def get_available_appointments(
                     "code": 404
                 }
             )
-        
-        print("Pass doctor")
+            
+        doctor, user = doctor_info
 
         # Get today's date
         today = datetime.now().date()
@@ -233,8 +281,6 @@ async def get_available_appointments(
             Appointment.appointment_day <= end_date,
             Appointment.status.in_([AppointmentStatusEnum.SCHEDULED, AppointmentStatusEnum.IN_PROGRESS])
         ).all()
-
-        print("Debug 1")
 
         # Create a set of booked slots (day and shift combinations)
         booked_slots = {

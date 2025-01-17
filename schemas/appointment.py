@@ -30,6 +30,8 @@ class AppointmentCreate(AppointmentBase):
 
 class AppointmentResponse(AppointmentBase):
     appointment_id: int
+    doctor_fullname: str
+    doctor_specialty: str
 
     class Config:
         from_attributes = True
