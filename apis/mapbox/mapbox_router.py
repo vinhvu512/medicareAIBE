@@ -23,36 +23,44 @@ class RouteRequest(BaseModel):
     mid_points: Optional[List[Coordinate]] = []
 
 @router.get("/suggestions")
-async def get_suggestions(request: SearchRequest):
+async def get_suggestions(
+    query: str,
+    session_token: str,
+    proximity_longitude: Optional[float] = None,
+    proximity_latitude: Optional[float] = None
+):
     """Get location suggestions from Mapbox Search API"""
     try:
         url = f"https://api.mapbox.com/search/searchbox/v1/suggest"
         params = {
-            "q": request.query,
+            "q": query,
             "access_token": MAPBOX_ACCESS_TOKEN,
-            "session_token": request.session_token,
-            "language": "en"
+            "session_token": session_token,
+            "language": "en",
+            "country": "vn"
         }
 
-        # Add proximity parameter if provided
-        if request.proximity:
-            params["proximity"] = f"{request.proximity.longitude},{request.proximity.latitude}"
+        if proximity_longitude is not None and proximity_latitude is not None:
+            params["proximity"] = f"{proximity_longitude},{proximity_latitude}"
         
         async with httpx.AsyncClient() as client:
             response = await client.get(url, params=params)
             response.raise_for_status()
             data = response.json()
             
-            # Filter and transform suggestions
-            simplified_suggestions = [
-                {
-                    "name": suggestion["name"],
-                    "mapbox_id": suggestion["mapbox_id"],
-                    "full_address": suggestion["full_address"]
-                }
-                for suggestion in data["suggestions"]
-            ]
-            return simplified_suggestions
+            suggestions = {
+                "suggestions": [
+                    {
+                        "name": suggestion.get("name", ""),
+                        "mapbox_id": suggestion.get("mapbox_id", ""),
+                        "full_address": suggestion.get("full_address", "")
+                    }
+                    for suggestion in data.get("suggestions", [])
+                ]
+            }
+            
+            return suggestions
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -87,21 +95,25 @@ async def retrieve_place(mapbox_id: str, session_token: str):
         raise HTTPException(status_code=500, detail=f"Error retrieving place details: {str(e)}")
 
 @router.get("/route")
-async def get_route(request: RouteRequest):
+async def get_route(
+    start_longitude: float,
+    start_latitude: float,
+    dest_longitude: float,
+    dest_latitude: float,
+    mid_points: Optional[str] = None  # Format: "lng1,lat1;lng2,lat2;..."
+):
     """Get route from Mapbox Directions API"""
     try:
         # Start with start location coordinates
-        coordinates = [f"{request.start_location.longitude},{request.start_location.latitude}"]
+        coordinates = [f"{start_longitude},{start_latitude}"]
         
         # Add mid points if they exist
-        if request.mid_points:
-            coordinates.extend([
-                f"{point.longitude},{point.latitude}" 
-                for point in request.mid_points
-            ])
+        if mid_points:
+            mid_point_list = mid_points.split(";")
+            coordinates.extend(mid_point_list)
         
         # Add destination coordinates
-        coordinates.append(f"{request.destination.longitude},{request.destination.latitude}")
+        coordinates.append(f"{dest_longitude},{dest_latitude}")
         
         # Join all coordinates with semicolon
         coordinates_str = ";".join(coordinates)
