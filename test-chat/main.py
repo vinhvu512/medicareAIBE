@@ -150,6 +150,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 message = json.loads(data)
                 print("Receive Message: ", message)
                 if message['type'] == 'location':
+                    print("Receive location")
                     latitude = message['latitude']
                     longitude = message['longitude']
                     traffic_status = check_traffic(latitude, longitude)
