@@ -18,17 +18,17 @@ react_system_header_str = 'You are designed to help with a variety of tasks, fro
 react_system_prompt = PromptTemplate(react_system_header_str)
 
 class AgentService:
-    def __init__(self):
+    def __init__(self, agent_id: int, user_id: str):
+        # Add agent_id property
+        self.agent_id = agent_id
+        self.user_id = user_id
+
+
         # Initialize LLM service and get the model
         self.llm = Gemini(model="models/gemini-1.5-flash",api_key="AIzaSyDg9KyiwLv6w_oYP8mNSPbkXH0Syr-cvSk")
         
-        # Initialize individual tools
-        self.weather_tool = WeatherTool().tool
-        self.stock_tool = StockTool().tool
-        # self.user_tool = UserTool().tool
         
         # Initialize HospitalTool and its individual FunctionTools
-
         self.hospital_tool_instance = hospital_tool_instance = HospitalTool()
         self.hospital_tool_instance.set_token_provider(lambda: self.token)
         self.get_all_hospitals = hospital_tool_instance.get_all_hospitals
@@ -38,7 +38,10 @@ class AgentService:
         self.get_available_appointments = hospital_tool_instance.get_available_appointments
         self.create_appointment = hospital_tool_instance.create_appointment
         
-        self.map_tool_instance = MapTool()
+
+
+        # Tool for mapbox
+        self.map_tool_instance = MapTool(user_id)
         self.search_locations = self.map_tool_instance.search_locations
         self.get_place_details = self.map_tool_instance.get_place_details
         self.get_route = self.map_tool_instance.get_route
@@ -47,10 +50,6 @@ class AgentService:
         
         # List of all tools to be added to the agent
         self.tools = [
-            self.weather_tool,
-            self.stock_tool,
-
-
             self.get_all_hospitals,
             self.search_hospitals,
             self.search_departments,

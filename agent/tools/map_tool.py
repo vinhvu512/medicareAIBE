@@ -3,8 +3,10 @@ from typing import List, Dict, Optional
 import requests
 
 class MapTool:
-    def __init__(self):
+    def __init__(self, session_token: int):
         self.BASE_URL = "http://localhost:80/api/mapbox"
+
+        self.session_token = session_token
         
         # Search locations tool
         self.search_locations = FunctionTool.from_defaults(
@@ -12,7 +14,6 @@ class MapTool:
             description=(
                 "Tìm kiếm địa điểm. Tham số:\n"
                 "- query (str): Từ khóa tìm kiếm\n"
-                "- session_token (str): Token phiên làm việc\n"
                 "- proximity_longitude (float, optional): Kinh độ vị trí gần đó\n"
                 "- proximity_latitude (float, optional): Vĩ độ vị trí gần đó"
             )
@@ -24,7 +25,6 @@ class MapTool:
             description=(
                 "Lấy chi tiết của một địa điểm. Tham số:\n"
                 "- mapbox_id (str): ID của địa điểm từ Mapbox\n"
-                "- session_token (str): Token phiên làm việc"
             )
         )
         
@@ -44,7 +44,6 @@ class MapTool:
     def search_locations_fn(
         self, 
         query: str,
-        session_token: str,
         proximity_longitude: float = None,
         proximity_latitude: float = None
     ) -> Dict:
@@ -53,7 +52,7 @@ class MapTool:
             url = f"{self.BASE_URL}/suggestions"
             params = {
                 "query": query,
-                "session_token": session_token
+                "session_token": self.session_token
             }
             if proximity_longitude and proximity_latitude:
                 params.update({
@@ -69,13 +68,12 @@ class MapTool:
 
     def get_place_details_fn(
         self,
-        mapbox_id: str,
-        session_token: str
+        mapbox_id: str
     ) -> Dict:
         """Get details for a specific place"""
         try:
             url = f"{self.BASE_URL}/retrieve/{mapbox_id}"
-            params = {"session_token": session_token}
+            params = {"session_token": self.session_token}
             
             response = requests.get(url, params=params)
             response.raise_for_status()
