@@ -42,6 +42,6 @@ app.include_router(departments_router, prefix="/api/departments", tags=["departm
 app.include_router(clinic_rooms_router, prefix="/api/clinic-rooms", tags=["clinic_roooms"])
 app.include_router(mapbox_router, prefix="/api/mapbox", tags=["mapbox"])
 
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run("main:app", host="0.0.0.0", port=80, reload=True)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=80, reload=True)
