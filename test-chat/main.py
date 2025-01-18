@@ -6,6 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import json
 from deepgram import DeepgramClient, PrerecordedOptions, FileSource
 import os
+from typing import List, Tuple
+import math
+from datetime import datetime
 import asyncio
 from dotenv import load_dotenv
 
@@ -58,11 +61,78 @@ if not DEEPGRAM_API_KEY:
   
 deepgram = DeepgramClient()
 
-def check_traffic(latitude, longitude):
-    # Implement real traffic checking logic
-    if int(latitude * 100) % 2 == 1:
-        return "heavy"
-    return "smooth"
+with open('traffic_data.json', 'r', encoding='utf-8') as f:
+    traffic_data = json.load(f)
+
+def haversine_distance(lat1, lon1, lat2, lon2):
+    R = 6371000  # Bán kính Trái Đất tính bằng mét
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+
+    a = math.sin(delta_phi / 2) ** 2 + \
+        math.cos(phi1) * math.cos(phi2) * \
+        math.sin(delta_lambda / 2) ** 2
+
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    distance = R * c
+    return distance
+
+def check_traffic(current_lat, current_lon):
+    """
+    Kiểm tra xem có đoạn đường sắp tới đang kẹt xe hay không.
+
+    Parameters:
+    - current_lat, current_lon: Vĩ độ và kinh độ hiện tại của xe
+
+    Returns:
+    - 'heavy' nếu có kẹt xe, 'clear' nếu không có
+    """
+    now = datetime.now()
+    current_hour = now.hour
+    current_minute = now.minute
+
+    # Xác định khoảng thời gian hiện tại
+    time_period = None
+    if 7 <= current_hour < 9:
+        time_period = "7h-9h"
+    elif 9 <= current_hour < 11:
+        time_period = "9h-11h"
+    elif 11 <= current_hour < 13:
+        time_period = "11h-13h"
+    elif 13 <= current_hour < 15:
+        time_period = "13h-15h"
+    elif 15 <= current_hour < 17:
+        time_period = "15h-17h"
+    elif 17 <= current_hour < 19:
+        time_period = "17h-19h"
+    elif 19 <= current_hour < 21:
+        time_period = "19h-21h"
+    else:
+        # Ngoài các khoảng thời gian đã định, không có kẹt xe
+        return 'clear'
+
+    # Lấy danh sách các điểm kẹt xe trong khoảng thời gian hiện tại
+    congestion_points = traffic_data.get(time_period, [])
+
+    # Chỉ xem xét các điểm kẹt xe với trạng thái 'Cao' hoặc 'Rất cao'
+    relevant_congestion_points = [
+        point for point in congestion_points
+        if point['status'].lower() in ['cao', 'rất cao']
+    ]
+
+    # Kiểm tra xem vị trí hiện tại có gần bất kỳ điểm kẹt xe nào không
+    for point in relevant_congestion_points:
+        distance = haversine_distance(
+            current_lat, current_lon,
+            point['latitude'], point['longitude']
+        )
+        if distance <= 700:
+            return 'heavy'
+
+    return 'clear'
 
 def process_message(message: str):
     if "tìm đường" in message.lower():
@@ -84,11 +154,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     longitude = message['longitude']
                     traffic_status = check_traffic(latitude, longitude)
                     if traffic_status == 'heavy':
-                        alert_message = json.dumps({
-                            "type": "traffic_alert",
-                            "message": "Cảnh báo: Đoạn đường sắp tới đang kẹt xe."
-                        })
-                        await manager.send_personal_message(alert_message, websocket)
+                        # alert_message = json.dumps({
+                        #     "type": "traffic_alert",
+                        #     "message": "Cảnh báo: Đoạn đường sắp tới đang kẹt xe."
+                        # })
+                        # await manager.send_personal_message(alert_message, websocket)
+                        await manager.send_personal_message("Cảnh báo: Đoạn đường sắp tới đang kẹt xe.", websocket)
                 elif message['type'] == 'text':
                     response = process_message(message['text'])
                     if response:
