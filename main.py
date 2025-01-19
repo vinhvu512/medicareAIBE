@@ -11,6 +11,7 @@ from apis.doctors.doctors_router import router as doctors_router
 from apis.departments.departments_router import router as departments_router
 from apis.clinic_rooms.clinic_rooms_router import router as clinic_rooms_router
 from apis.mapbox.mapbox_router import router as mapbox_router
+from apis.health_report.health_report_router import router as health_reports_router
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -41,6 +42,7 @@ app.include_router(doctors_router, prefix="/api/doctors", tags=["doctors"])
 app.include_router(departments_router, prefix="/api/departments", tags=["departments"])
 app.include_router(clinic_rooms_router, prefix="/api/clinic-rooms", tags=["clinic_roooms"])
 app.include_router(mapbox_router, prefix="/api/mapbox", tags=["mapbox"])
+app.include_router(health_reports_router, prefix="/api/reports", tags=["health_reports"])
 
 if __name__ == "__main__":
     import uvicorn
