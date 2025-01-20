@@ -52,7 +52,8 @@ class AgentService:
         self.get_route = self.map_tool_instance.get_route
 
 
-        
+        self.predict_disease = hospital_tool_instance.predict_disease
+        self.create_health_report_tool = hospital_tool_instance.create_health_report_tool
         # List of all tools to be added to the agent
         self.tools = [
             self.get_all_hospitals,
@@ -61,6 +62,8 @@ class AgentService:
             self.search_doctors,
             self.get_available_appointments,
             self.create_appointment,
+            self.predict_disease,
+            self.create_health_report_tool,
 
 
 

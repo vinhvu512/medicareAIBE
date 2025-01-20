@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Date, Enum, CheckCon
 from database.session import Base
 import enum
 from datetime import date
+from sqlalchemy.orm import relationship
 
 class AppointmentStatusEnum(str, enum.Enum):
     SCHEDULED = "Scheduled"
@@ -27,3 +28,5 @@ class Appointment(Base):
         CheckConstraint('appointment_shift >= 0 AND appointment_shift <= 19', 
                        name='check_valid_shift'),
     )
+
+    health_reports = relationship("HealthReport", back_populates="appointment")

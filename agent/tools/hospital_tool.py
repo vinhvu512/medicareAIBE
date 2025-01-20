@@ -99,6 +99,25 @@ class HospitalTool:
                 """
             )
         )
+        self.predict_disease = FunctionTool.from_defaults(
+            fn=self.predict_disease_fn,
+            description=(
+                "YOU MUST COLLECT RESPONSE BEFORE USE THIS TOOL"
+                "After successfully creating an appointment, collect the user's responses to 5 health-related questions "
+                "specified in the department user choses."
+                "Then, ask the user if they want to generate a health report and send it to the doctor."
+                "YOU MUST COLLECT RESPONSE BEFORE USE THIS TOOL"
+            )
+        )
+        
+        self.create_health_report_tool = FunctionTool.from_defaults(
+            fn=self.create_health_report_fn,
+            description=(
+                "Generate a health report based on the conversation content. The content send to the function is the analysis based on question and answer of the user, you are medical helper chatbot. You must structure this report_content to readability"
+                "Requires the following details: 'appointment_id' (int) and 'report_content' (string)"
+                "Return the success or failure result of the report creation."
+            )
+        )
 
     def set_token_provider(self, provider):
         """Set the function that will provide the token"""
@@ -274,17 +293,6 @@ class HospitalTool:
             return "Lịch hẹn đã bị hủy bởi người dùng."
 
     def create_appointment_fn(self, appointment_data: dict) -> Union[str, dict]:
-        """
-        Tạo lịch hẹn mới.
-        Dữ liệu đầu vào:
-        - hospital_id (int)
-        - department_id (int) 
-        - doctor_id (int)
-        - patient_id (int)
-        - appointment_day (str, format YYYY-MM-DD)  
-        - appointment_shift (int)
-        - reason (str)
-        """
         try:
             # Extract data from AttributedDict wrapper if present
             if isinstance(appointment_data, dict) and 'appointment_data' in appointment_data:
@@ -316,7 +324,60 @@ class HospitalTool:
             response.raise_for_status()
 
             result = response.json()
-            return result.get('message', f"Lịch hẹn đã được tạo thành công.")
+            return {
+                "message": result.get('message', "Lịch hẹn đã được tạo thành công."),
+                "appointment_id": result.get('appointment_id')
+            }
         except requests.RequestException as e:
             print(f"Lỗi khi tạo lịch hẹn: {str(e)}")
             return {"error": f"Lỗi khi tạo lịch hẹn: {str(e)}"}
+    def create_health_report_fn(self, appointment_id: int, chat_content: str) -> dict:
+        BASE_URL = os.getenv("BASE_URL")
+        token = self.get_token()
+        
+        url = f"{BASE_URL}/reports"
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json'
+        }
+        
+        payload = {
+            "appointment_id": appointment_id,
+            "chat_content": chat_content
+        }
+
+        try:
+            print(f"Gửi yêu cầu POST đến {url} với dữ liệu: {payload}")
+            response = requests.post(url, headers=headers, json=payload, timeout=3000)
+            
+            print("Mã trạng thái:", response.status_code)
+            print("Nội dung phản hồi:", response.text)
+            response.raise_for_status()
+
+            return response.json()
+        except requests.RequestException as e:
+            print(f"Lỗi khi tạo báo cáo sức khỏe: {str(e)}")
+            return {"error": f"Lỗi khi tạo báo cáo sức khỏe: {str(e)}"}
+        
+    def predict_disease_fn(self, conversation_data: dict):
+        try:
+            # Process conversation data and simulate disease prediction
+            user_responses = {
+                key: conversation_data[key] for key in conversation_data if key.startswith('answer')
+            }
+
+            # Example disease prediction logic (replace with actual logic)
+            prediction_result = {
+                "Covid-19": 0.75,
+                "Flu": 0.40,
+                "Hypertension": 0.20
+            }
+
+            return {
+                "message": "Disease prediction completed.",
+                "predictions": prediction_result
+            }
+        except Exception as e:
+            return {"error": f"An error occurred while predicting diseases: {str(e)}"}
+    def disease_predictor(self, conversation: str):
+        return {"Covid: 0.8", "Flu: 0.2"}
