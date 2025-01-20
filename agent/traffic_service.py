@@ -26,6 +26,22 @@ def check_traffic(current_lat, current_lon):
     # Special coordinate
     if current_lat == 0 and current_lon == 0:
         return 'heavy'
+    
+    # Tọa độ tâm vòng tròn
+    center_lat, center_lon = 10.790167, 106.652426
+    # Tọa độ một điểm nằm trên vòng tròn
+    circle_point_lat, circle_point_lon = 10.786197, 106.653650
+    
+    # Tính bán kính vòng tròn (khoảng cách giữa tâm và điểm trên vòng tròn)
+    radius = ((circle_point_lat - center_lat) ** 2 + (circle_point_lon - center_lon) ** 2) ** 0.5
+    
+    # Tính khoảng cách từ điểm hiện tại đến tâm vòng tròn
+    distance = ((current_lat - center_lat) ** 2 + (current_lon - center_lon) ** 2) ** 0.5
+    
+    # Kiểm tra nếu khoảng cách nằm trong vòng tròn
+    if distance <= radius:
+        return 'heavy'
+    
 
 
     now = datetime.now()

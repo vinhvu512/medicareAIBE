@@ -1,13 +1,36 @@
 from llama_index.core.tools import FunctionTool
 from typing import List, Dict, Optional
+import json
+
+import nest_asyncio
+nest_asyncio.apply()
+
 import requests
 
+from enum import Enum
+from typing import List, Dict, Optional, Tuple
+
+class CoordinateType(Enum):
+    START = "start"
+    MID = "mid"
+    DEST = "dest"
+
 class MapTool:
-    def __init__(self, session_token: int):
+    def __init__(self, user_id: int, websocket_manager=None):
         self.BASE_URL = "http://localhost:80/api/mapbox"
 
-        self.session_token = session_token
-        
+        print('---', user_id, '---')
+
+        self.user_id = user_id
+
+        self.session_token = user_id
+        self.websocket_manager = websocket_manager
+
+         # Add coordinate storage
+        self.start_coordinate: Optional[Tuple[float, float]] = None
+        self.dest_coordinate: Optional[Tuple[float, float]] = None
+        self.mid_coordinates: List[Tuple[float, float]] = []
+
         # Search locations tool
         self.search_locations = FunctionTool.from_defaults(
             fn=self.search_locations_fn,
@@ -25,19 +48,15 @@ class MapTool:
             description=(
                 "Lấy chi tiết của một địa điểm. Tham số:\n"
                 "- mapbox_id (str): ID của địa điểm từ Mapbox\n"
+                "- coordinat_type (str): Nhận 1 trong 3 giá trị 'start', 'mid', 'dest'. Muốn set coordinate này đang tìm cho vị trí bắt đầu (start), vị trí kết thúc (dest) hay các vị trí ở giữa (mid)\n"
             )
         )
         
         # Get route tool
         self.get_route = FunctionTool.from_defaults(
-            fn=self.get_route_fn,
+            async_fn=self.get_route_fn,
             description=(
-                "Lấy chỉ đường giữa các điểm. Tham số:\n"
-                "- start_longitude (float): Kinh độ điểm bắt đầu\n" 
-                "- start_latitude (float): Vĩ độ điểm bắt đầu\n"
-                "- dest_longitude (float): Kinh độ điểm đích\n"
-                "- dest_latitude (float): Vĩ độ điểm đích\n"
-                "- mid_points (str, optional): Các điểm dừng giữa đường, định dạng: 'lng1,lat1;lng2,lat2'"
+                "Lấy chỉ đường giữa các điểm.\n"
             )
         )
 
@@ -68,41 +87,72 @@ class MapTool:
 
     def get_place_details_fn(
         self,
-        mapbox_id: str
+        mapbox_id: str,
+        coordinate_type: str
     ) -> Dict:
-        """Get details for a specific place"""
+        """Get place details and store coordinates based on type"""
         try:
+
             url = f"{self.BASE_URL}/retrieve/{mapbox_id}"
             params = {"session_token": self.session_token}
-            
             response = requests.get(url, params=params)
-            response.raise_for_status()
-            return response.json()
-        except Exception as e:
-            return {"error": f"Lỗi khi lấy thông tin địa điểm: {str(e)}"}
 
-    def get_route_fn(
-        self,
-        start_longitude: float,
-        start_latitude: float,
-        dest_longitude: float,
-        dest_latitude: float,
-        mid_points: str = None
-    ) -> Dict:
-        """Get route between points"""
+            response.raise_for_status()
+            place_data = response.json()
+            
+            # Extract coordinates
+            longitude = float(place_data.get('longitude', 0))
+            latitude = float(place_data.get('latitude', 0))
+            
+            # Store coordinates based on type
+            if coordinate_type == CoordinateType.START.value:
+                self.start_coordinate = (longitude, latitude)
+            elif coordinate_type == CoordinateType.DEST.value:
+                self.dest_coordinate = (longitude, latitude)
+            elif coordinate_type == CoordinateType.MID.value:
+                self.mid_coordinates.append((longitude, latitude))
+                
+            return place_data
+            
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def get_route_fn(self) -> str:
+        """Get route between points and send via WebSocket"""
+        if not self.start_coordinate or not self.dest_coordinate:
+            raise ValueError("Start and destination coordinates must be set first using get_place_details")
+
         try:
             url = f"{self.BASE_URL}/route"
             params = {
-                "start_longitude": start_longitude,
-                "start_latitude": start_latitude,
-                "dest_longitude": dest_longitude,
-                "dest_latitude": dest_latitude
+                "start_longitude": self.start_coordinate[0],
+                "start_latitude": self.start_coordinate[1], 
+                "dest_longitude": self.dest_coordinate[0],
+                "dest_latitude": self.dest_coordinate[1]
             }
-            if mid_points:
+
+            # Add mid points if they exist
+            if self.mid_coordinates:
+                mid_points = ";".join([f"{lng},{lat}" for lng, lat in self.mid_coordinates])
                 params["mid_points"] = mid_points
                 
             response = requests.get(url, params=params)
             response.raise_for_status()
-            return response.json()
+            route_data = response.json()
+
+            # Send route data via WebSocket
+            if self.websocket_manager:
+                await self.websocket_manager.send_personal_message(
+                    json.dumps({
+                        "event": "route_data", 
+                        "data": route_data
+                    }),
+                    self.user_id
+                )
+                print("Send data to -", self.user_id)
+            else:
+                print("No websocket manager")
+            
+            return "Tôi vừa gửi thông tin về đường đi cho khách hàng"
         except Exception as e:
-            return {"error": f"Lỗi khi lấy thông tin chỉ đường: {str(e)}"}
+            return f"Lỗi khi lấy thông tin chỉ đường: {str(e)}"

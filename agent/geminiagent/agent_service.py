@@ -14,19 +14,21 @@ from llama_index.llms.gemini import Gemini
 
 from llama_index.core import PromptTemplate
 
+import nest_asyncio
+nest_asyncio.apply()
+
 react_system_header_str = 'You are designed to help with a variety of tasks, from answering questions to providing summaries to other types of analyses.\n\n## Tools\n\nYou have access to a wide variety of tools. You are responsible for using the tools in any sequence you deem appropriate to complete the task at hand.\nThis may require breaking the task into subtasks and using different tools to complete each subtask.\n\nYou have access to the following tools:\n{tool_desc}\n\nHere is some context to help you answer the question and plan:\n{context}\n\n\n## Output Format\n\nPlease answer in the same language as the question and use the following format:\n\n```\nThought: The current language of the user is: (user\'s language). I need to use a tool to help me answer the question.\nAction: tool name (one of {tool_names}) if using a tool.\nAction Input: the input to the tool, in a JSON format representing the kwargs (e.g. {{"input": "hello world", "num_beams": 5}})\n```\n\nPlease ALWAYS start with a Thought.\n\nNEVER surround your response with markdown code markers. You may use code markers within your response if you need to.\n\nPlease use a valid JSON format for the Action Input. Do NOT do this {{\'input\': \'hello world\', \'num_beams\': 5}}.\n\nIf this format is used, the user will respond in the following format:\n\n```\nObservation: tool response\n```\n\nYou should keep repeating the above format till you have enough information to answer the question without using any more tools. At that point, you MUST respond in the one of the following two formats:\n\n```\nThought: I can answer without using any more tools. I\'ll use the user\'s language to answer\nAnswer: [your answer here (In the same language as the user\'s question)]\n```\n\n```\nThought: I cannot answer the question with the provided tools.\nAnswer: [your answer here (In the same language as the user\'s question)]\n```\n\n## Current Conversation\n\nBelow is the current conversation consisting of interleaving human and assistant messages.\n'
 react_system_prompt = PromptTemplate(react_system_header_str)
 
 class AgentService:
-    def __init__(self, agent_id: int, user_id: str):
+    def __init__(self, agent_id: int, user_id: str, websocket_manager=None):
         # Add agent_id property
         self.agent_id = agent_id
         self.user_id = user_id
-
+        self.websocket_manager = websocket_manager
 
         # Initialize LLM service and get the model
         self.llm = Gemini(model="models/gemini-1.5-flash",api_key="AIzaSyDg9KyiwLv6w_oYP8mNSPbkXH0Syr-cvSk")
-        
         
         # Initialize HospitalTool and its individual FunctionTools
         self.hospital_tool_instance = hospital_tool_instance = HospitalTool()
@@ -41,7 +43,10 @@ class AgentService:
 
 
         # Tool for mapbox
-        self.map_tool_instance = MapTool(user_id)
+        self.map_tool_instance = MapTool(
+            user_id=self.user_id, 
+            websocket_manager=self.websocket_manager
+        )
         self.search_locations = self.map_tool_instance.search_locations
         self.get_place_details = self.map_tool_instance.get_place_details
         self.get_route = self.map_tool_instance.get_route
@@ -71,7 +76,7 @@ class AgentService:
         self.token = None
 
 
-        
+
     def set_base_prompt(self, prompt: str, token: str = None):
         """Set the base personality prompt for the agent, including the token"""
         if not prompt or not isinstance(prompt, str):
@@ -94,7 +99,9 @@ class AgentService:
                 llm=self.llm,
                 verbose=True,
                 system_message=self.base_prompt,
-                context=self.context
+                context=self.context,
+                # tool_executor_mapping={"get_route_fn": self.map_tool_instance.get_route_fn}
+                tool_executor_mapping={"get_route_fn": self.map_tool_instance.get_route_fn}
             )
             print(self.agent.get_prompts())
             self.agent.update_prompts({"agent_worker:system_prompt": react_system_prompt})
@@ -102,7 +109,6 @@ class AgentService:
             raise ValueError(f"Failed to initialize agent with new prompt: {str(e)}")
     
     def chat(self, query: str, token: str) -> str:
-        print("DAO DUY DAT: ",self.agent)
         try:
             if not self.agent:
                 print("Agent chưa được khởi tạo.")
