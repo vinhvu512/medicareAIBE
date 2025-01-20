@@ -156,6 +156,7 @@ async def new_route_tool(user_id: str):
         )
 
 script_responses = {
+    # Existing route-related responses
     "Bạn hãy giúp tôi tạo đường đi từ vị trí hiện tại đến chợ Võ Thành Trang": {
         "response": "Có phải bạn muốn đến chợ Võ Thành Trang ở địa chỉ 15 đường Trường Chinh, Phường 13, Tân Bình, Hồ Chí Minh, Việt Nam không?",
         "action": None
@@ -165,8 +166,34 @@ script_responses = {
         "action": first_route_tool
     },
     "Có, bạn hãy đổi cho tôi": {
-        "response": "Tôi vừa cho bạn một tuyến đường mới đi qua đường Phạm Phú Thứ để tránh kẹt xe! Nếu bạn cần giúp đỡ thêm hãy nói cho tôi biết.", 
+        "response": "Tôi vừa cho bạn một tuyến đường mới đi qua đường Phạm Phú Thứ để tránh kẹt xe! Nếu bạn cần giúp đỡ thêm hãy nói cho tôi biết.",
         "action": new_route_tool
+    },
+
+    # New hospital appointment responses
+    "Tôi muốn đặt lịch hẹn với bệnh viện Trưng Vương": {
+        "response": "Bạn muốn khám bệnh ở khoa nào?",
+        "action": None
+    },
+    "Tôi muốn khám ở khoa Tim mạch": {
+        "response": """Khoa Tim mạch hiện đang có các bác sĩ sau:
+
+1. Nguyễn Văn Thành
+2. Trần Thị An
+3. Phạm Hoàng Nam
+4. Hoàng Thị Tuyết
+5. Nguyễn Quốc Anh
+
+Bạn muốn đặt lịch hẹn với bác sĩ nào?""",
+        "action": None
+    },
+    "Tôi muốn khám với bác sĩ Nguyễn Văn Thành": {
+        "response": "Bạn có thể cho tôi biết ngày và giờ bạn muốn đặt lịch hẹn không?",
+        "action": None
+    },
+    "Tôi muốn khám lúc 8h ngày 22/01/2024": {
+        "response": "Lịch hẹn của bạn đã được đặt với bác sĩ Nguyễn Văn Thành vào lúc 8h ngày 22/01/2024. Cảm ơn bạn đã sử dụng dịch vụ!",
+        "action": None
     }
 }
 
