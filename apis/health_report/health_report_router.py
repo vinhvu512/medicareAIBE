@@ -21,9 +21,10 @@ async def create_health_report(
     Tạo báo cáo sức khỏe từ nội dung cuộc trò chuyện và lưu vào database.
     """
     # Kiểm tra liệu cuộc hẹn có tồn tại và thuộc về người dùng hiện tại
+    print(report.appointment_id)
     appointment = db.query(Appointment).filter(
         Appointment.appointment_id == report.appointment_id,
-        Appointment.patient_id == current_user.patient.patient_id
+        # Appointment.patient_id == current_user.user_id
     ).first()
     if not appointment:
         raise HTTPException(status_code=404, detail="Cuộc hẹn không tìm thấy")
@@ -34,9 +35,9 @@ async def create_health_report(
     # Tạo bản ghi HealthReport
     health_report = HealthReport(
         appointment_id=report.appointment_id,
-        patient_id=current_user.patient.patient_id,
+        patient_id=current_user.user_id,
         chat_content=report.chat_content,
-        prediction_results=report.chat_content  # Giả sử prediction là dict hoặc list
+        prediction_results=[]  # Giả sử prediction là dict hoặc list
     )
 
     db.add(health_report)

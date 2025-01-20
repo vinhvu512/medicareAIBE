@@ -93,7 +93,8 @@ class AgentService:
         self.search_doctors = hospital_tool_instance.search_doctors
         self.get_available_appointments = hospital_tool_instance.get_available_appointments
         self.create_appointment = hospital_tool_instance.create_appointment
-        
+        self.predict_disease = hospital_tool_instance.predict_disease
+        self.create_health_report_tool = hospital_tool_instance.create_health_report_tool
         # List of all tools to be added to the agent
         self.tools = [
             self.weather_tool,
@@ -104,7 +105,9 @@ class AgentService:
             self.search_departments,
             self.search_doctors,
             self.get_available_appointments,
-            self.create_appointment
+            self.create_appointment,
+            self.predict_disease,
+            self.create_health_report_tool
         ]
         
         self.base_prompt = ""
