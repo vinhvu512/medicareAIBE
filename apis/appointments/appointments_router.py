@@ -381,3 +381,60 @@ async def get_appointment_by_day_shift(
                 "code": 500
             }
         )
+    
+@router.get("/{appointment_id}")
+async def get_appointment_detail(
+    appointment_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get detailed information of an appointment by appointment_id
+    """
+    try:
+        # Join Appointment with Doctor, User, and Hospital to get all details
+        appointment_detail = db.query(Appointment, User, Doctor, Hospital)\
+            .join(Doctor, Appointment.doctor_id == Doctor.doctor_id)\
+            .join(User, Doctor.doctor_id == User.user_id)\
+            .join(Hospital, Appointment.hospital_id == Hospital.hospital_id)\
+            .filter(Appointment.appointment_id == appointment_id)\
+            .first()
+        
+        if not appointment_detail:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": "Appointment not found",
+                    "code": 404
+                }
+            )
+
+        appointment, user, doctor, hospital = appointment_detail
+
+        response_data = {
+            "appointment_id": appointment.appointment_id,
+            "hospital_id": appointment.hospital_id,
+            "hospital_name": hospital.hospital_name,
+            "department_id": appointment.department_id,
+            "room_id": appointment.room_id,
+            "doctor_id": appointment.doctor_id,
+            "doctor_fullname": user.fullname,
+            "doctor_specialty": doctor.doctor_specialty,
+            "patient_id": appointment.patient_id,
+            "appointment_day": appointment.appointment_day,
+            "appointment_shift": appointment.appointment_shift,
+            "reason": appointment.reason,
+            "status": appointment.status
+        }
+        
+        return response_data
+    
+    except HTTPException as http_ex:
+        raise http_ex
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": f"Error fetching appointment details: {str(e)}",
+                "code": 500
+            }
+        )
