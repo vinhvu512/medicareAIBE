@@ -3,7 +3,7 @@ uvicorn
 llama-index
 pydantic
 jinja2
-llama-index-llms-gemini==0.1.10
+llama-index-llms-gemini==0.4.3
 google-generativeai==0.8.4
 python-dotenv==1.0.1
 pydantic[email]
