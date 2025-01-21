@@ -15,12 +15,18 @@ ENV PYTHONUNBUFFERED=1
 # Create a working directory
 WORKDIR /app
 
+# Create a virtual environment
+RUN python -m venv /app/venv
+
+# Set environment variable to use the virtual environment
+ENV PATH="/app/venv/bin:$PATH"
+
 # Copy the requirements file
 COPY requirements.txt .
 
-# Upgrade pip and install Python dependencies
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+# Upgrade pip and install Python dependencies within the virtual environment
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
 
 # Copy the rest of the application code
 COPY . .
@@ -28,6 +34,5 @@ COPY . .
 # Expose the port the app runs on
 EXPOSE 8000
 
-# Define the default command to run the application
-# Adjust this command based on your framework (e.g., FastAPI with Uvicorn)
+# Define the default command to run the application within the virtual environment
 CMD ["uvicorn", "agent.main:app", "--host", "0.0.0.0", "--port", "8000"]
