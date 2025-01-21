@@ -1,1 +1,1 @@
-from geminiagent.agent_service import AgentService
+from .agent_service import AgentService
