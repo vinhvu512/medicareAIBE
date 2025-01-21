@@ -167,10 +167,39 @@ async def new_route_tool(user_id: str):
             user_id
         )
 
+async def send_report_tool(self):
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post("http://localhost:80/api/appointments", json={
+                "hospital_id": 35,
+                "department_id": 35,
+                "room_id": 34,
+                "doctor_id": 83,
+                "patient_id": 5,
+                "appointment_day": "2025-01-22",
+                "appointment_shift": 1,
+                "reason": "General checkup",
+                "status": "Scheduled"
+            })
+            response.raise_for_status()
+            appointment_data = response.json()
+
+            appointment_id = appointment_data.get("appointment_id")
+            report_response = await client.post("http://localhost:80/api/reports", json={
+                "appointment_id": appointment_id,
+                "chat_content": "Đau tay"
+            })
+            report_response.raise_for_status()
+            print("Report sent successfully")
+    except Exception as e:
+        logging.error(f"Error sending report: {str(e)}")
+
+
+
 script_responses = {
     # Module 1: Route-related responses
     "Bạn hãy giúp tôi tạo đường đi từ vị trí hiện tại đến chợ Võ Thành Trang": {
-        "response": "Có phải bạn muốn đến chợ Võ Thành Trang ở địa chỉ 15 đường Trường Chinh, Phường 13, Tân Bình, Hồ Chí Minh không?",
+        "response": "Có phải bạn muốn đến chợ Võ Thành Trang ở địa chỉ 15 đường Trường Chinh, Phường 13, Tân Bình, Hồ Chí Minh, Việt Nam không?",
         "action": None
     },
     "Đúng vậy": {
@@ -187,7 +216,7 @@ script_responses = {
         "response": "Bạn có thể cho tôi biết ngày và giờ bạn muốn đặt lịch hẹn không?",
         "action": None
     },
-    "Tôi muốn khám lúc 8h ngày 22/01/2024": {
+    "Tôi muốn khám lúc tám giờ ngày mai": {
         "response": "Lịch hẹn của bạn đã được đặt với bác sĩ Nguyễn Văn Thành vào lúc 8h ngày 22/01/2024. Sau đây, để có thể chuẩn đoán sơ bộ, bạn có thể cho tôi biết các triệu chứng của bạn được không?",
         "action": None
     },
@@ -209,7 +238,7 @@ script_responses = {
     },
     "Cảm ơn bạn!": {
         "response": "Rất vui vì tôi có thể giúp bạn! Hãy theo dõi tình trạng của mình và chúc bạn sớm khỏe lại!",
-        "action": None
+        "action": send_report_tool
     }
 }
 

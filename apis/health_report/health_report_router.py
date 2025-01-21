@@ -16,8 +16,8 @@ router = APIRouter()
 @router.post("")
 async def create_health_report(
     report: HealthReportCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_patient)
+    db: Session = Depends(get_db)
+    # current_user: User = Depends(get_current_patient)
 ):
     """
     Tạo báo cáo sức khỏe từ nội dung cuộc trò chuyện và lưu vào database.
@@ -74,7 +74,7 @@ async def create_health_report(
     # Tạo bản ghi HealthReport
     health_report = HealthReport(
         appointment_id=report.appointment_id,
-        patient_id=current_user.user_id,
+        patient_id=appointment.patient_id,
         chat_content=report.chat_content,
         prediction_results=json_result  # Giả sử prediction là dict hoặc list
     )

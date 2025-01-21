@@ -28,8 +28,8 @@ router = APIRouter()
 @router.post("", response_model=AppointmentResponse)
 async def create_appointment(
     appointment: AppointmentCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_patient)
+    db: Session = Depends(get_db)
+    # current_user: User = Depends(get_current_patient)
 ):
     """Create a new appointment"""
     try:
@@ -46,35 +46,35 @@ async def create_appointment(
                 }
             )
 
-        # Validate department exists
-        department = db.query(Department).filter(
-            Department.department_id == appointment.department_id,
-            Department.hospital_id == appointment.hospital_id
-        ).first()
-        if not department:
-            raise HTTPException(
-                status_code=404,
-                detail={
-                    "error": "Department not found in this hospital",
-                    "code": 404
-                }
-            )
+        # # Validate department exists
+        # department = db.query(Department).filter(
+        #     Department.department_id == appointment.department_id,
+        #     Department.hospital_id == appointment.hospital_id
+        # ).first()
+        # if not department:
+        #     raise HTTPException(
+        #         status_code=404,
+        #         detail={
+        #             "error": "Department not found in this hospital",
+        #             "code": 404
+        #         }
+        #     )
 
-        # Validate room exists if provided
-        if appointment.room_id:
-            room = db.query(ClinicRoom).filter(
-                ClinicRoom.room_id == appointment.room_id,
-                ClinicRoom.department_id == appointment.department_id,
-                ClinicRoom.hospital_id == appointment.hospital_id
-            ).first()
-            if not room:
-                raise HTTPException(
-                    status_code=404,
-                    detail={
-                        "error": "Room not found in this department",
-                        "code": 404
-                    }
-                )
+        # # Validate room exists if provided
+        # if appointment.room_id:
+        #     room = db.query(ClinicRoom).filter(
+        #         ClinicRoom.room_id == appointment.room_id,
+        #         ClinicRoom.department_id == appointment.department_id,
+        #         ClinicRoom.hospital_id == appointment.hospital_id
+        #     ).first()
+        #     if not room:
+        #         raise HTTPException(
+        #             status_code=404,
+        #             detail={
+        #                 "error": "Room not found in this department",
+        #                 "code": 404
+        #             }
+        #         )
 
         # Validate doctor exists
         doctor = db.query(Doctor).filter(
