@@ -1,0 +1,37 @@
+FROM python:3.13-slim
+
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        portaudio19-dev \
+        build-essential \
+        python3-venv \
+        python3-dev \
+        gcc \
+        && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory
+WORKDIR /app
+
+# Copy requirements and install dependencies in virtual environment
+COPY requirements.txt .
+
+# Create virtual environment and install dependencies
+RUN python -m venv /app/venv && \
+    /app/venv/bin/pip install --upgrade pip && \
+    /app/venv/bin/pip install -r requirements.txt
+
+# Copy the entire application
+COPY . /app
+
+# Set working directory to the agent folder
+WORKDIR /app/agent
+
+# Add virtual environment to PATH to make it accessible globally
+ENV PATH="/app/venv/bin:$PATH"
+
+# Expose port for the agent service
+EXPOSE 8001
+
+# Run the Agent service using the absolute path of uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
