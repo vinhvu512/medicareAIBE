@@ -8,7 +8,7 @@ from models.department import Department
 from models.clinic_room import ClinicRoom
 from models.patient import Patient
 from schemas.appointment import AppointmentCreate, AppointmentResponse
-from datetime import datetime
+from datetime import datetime, date
 
 from datetime import datetime, timedelta
 from typing import List, Dict
@@ -323,6 +323,61 @@ async def get_available_appointments(
             status_code=500,
             detail={
                 "error": f"Error fetching available appointments: {str(e)}",
+                "code": 500
+            }
+        )
+    
+
+@router.get("/by-day-shift")
+async def get_appointment_by_day_shift(
+    appointment_day: str,  # Changed from date to str
+    shift_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Lấy thông tin cuộc hẹn dựa trên ngày và ca khám.
+    
+    Parameters:
+        appointment_day: Ngày hẹn (format: YYYY-MM-DD)
+        shift_id: ID ca khám
+    """
+    try:
+        # Convert string to date object
+        appointment_date = datetime.strptime(appointment_day, "%Y-%m-%d").date()
+        
+        # Query appointment với ngày và ca khám cụ thể
+        appointment = db.query(Appointment).filter(
+            Appointment.appointment_day == appointment_date,
+            Appointment.appointment_shift == shift_id
+        ).first()
+
+        if not appointment:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": "Không tìm thấy cuộc hẹn với ngày và ca khám này",
+                    "code": 404
+                }
+            )
+
+        return {
+            "appointment_id": appointment.appointment_id,
+            "hospital_id": appointment.hospital_id,
+            "department_id": appointment.department_id,
+            "doctor_id": appointment.doctor_id,
+            "patient_id": appointment.patient_id,
+            "appointment_day": appointment.appointment_day,
+            "appointment_shift": appointment.appointment_shift,
+            "status": appointment.status
+        }
+
+    except HTTPException as http_ex:
+        raise http_ex
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": f"Lỗi khi lấy thông tin cuộc hẹn: {str(e)}",
                 "code": 500
             }
         )

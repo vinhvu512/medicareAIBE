@@ -39,7 +39,6 @@ class AgentService:
         self.search_doctors = hospital_tool_instance.search_doctors
         self.get_available_appointments = hospital_tool_instance.get_available_appointments
         self.create_appointment = hospital_tool_instance.create_appointment
-        
 
 
         # Tool for mapbox

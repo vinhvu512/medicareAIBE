@@ -156,9 +156,9 @@ async def new_route_tool(user_id: str):
         )
 
 script_responses = {
-    # Existing route-related responses
+    # Module 1: Route-related responses
     "Bạn hãy giúp tôi tạo đường đi từ vị trí hiện tại đến chợ Võ Thành Trang": {
-        "response": "Có phải bạn muốn đến chợ Võ Thành Trang ở địa chỉ 15 đường Trường Chinh, Phường 13, Tân Bình, Hồ Chí Minh, Việt Nam không?",
+        "response": "Có phải bạn muốn đến chợ Võ Thành Trang ở địa chỉ 15 đường Trường Chinh, Phường 13, Tân Bình, Hồ Chí Minh không?",
         "action": None
     },
     "Đúng vậy": {
@@ -170,29 +170,33 @@ script_responses = {
         "action": new_route_tool
     },
 
-    # New hospital appointment responses
-    "Tôi muốn đặt lịch hẹn với bệnh viện Trưng Vương": {
-        "response": "Bạn muốn khám bệnh ở khoa nào?",
-        "action": None
-    },
-    "Tôi muốn khám ở khoa Tim mạch": {
-        "response": """Khoa Tim mạch hiện đang có các bác sĩ sau:
-
-1. Nguyễn Văn Thành
-2. Trần Thị An
-3. Phạm Hoàng Nam
-4. Hoàng Thị Tuyết
-5. Nguyễn Quốc Anh
-
-Bạn muốn đặt lịch hẹn với bác sĩ nào?""",
-        "action": None
-    },
-    "Tôi muốn khám với bác sĩ Nguyễn Văn Thành": {
+    # Module 2: Hospital appointment and diagnosis
+    "Tôi muốn đặt lịch hẹn với bác sĩ Nguyễn Văn Thành ở bệnh viện Trưng Vương": {
         "response": "Bạn có thể cho tôi biết ngày và giờ bạn muốn đặt lịch hẹn không?",
         "action": None
     },
     "Tôi muốn khám lúc 8h ngày 22/01/2024": {
-        "response": "Lịch hẹn của bạn đã được đặt với bác sĩ Nguyễn Văn Thành vào lúc 8h ngày 22/01/2024. Cảm ơn bạn đã sử dụng dịch vụ!",
+        "response": "Lịch hẹn của bạn đã được đặt với bác sĩ Nguyễn Văn Thành vào lúc 8h ngày 22/01/2024. Sau đây, để có thể chuẩn đoán sơ bộ, bạn có thể cho tôi biết các triệu chứng của bạn được không?",
+        "action": None
+    },
+    "Tôi thấy ngứa và đỏ da ở cổ tay, da hơi khô và tróc vảy.": {
+        "response": "Triệu chứng này xuất hiện khi nào? Có liên quan đến điều gì không?",
+        "action": None
+    },
+    "Vài ngày trước, sau khi tôi đeo một chiếc vòng tay mới.": {
+        "response": "Cảm ơn bạn đã chia sẻ. Bạn có thấy mụn nước nhỏ hoặc vùng da bị tróc vảy không?",
+        "action": None
+    },
+    "Có một vài mụn nước nhỏ, và da hơi khô.": {
+        "response": "Rất có thể bạn đang gặp phải tình trạng viêm da tiếp xúc dị ứng. Điều này xảy ra khi da của bạn phản ứng với một chất gây dị ứng, ví dụ như kim loại trong chiếc vòng tay.",
+        "action": None
+    },
+    "Vậy tôi cần làm gì ?": {
+        "response": "Đây là một số gợi ý bạn có thể thử:\n\n1. Tháo vòng tay ra ngay lập tức để tránh tiếp xúc thêm với chất gây dị ứng.\n2. Rửa vùng da bị ảnh hưởng bằng nước sạch và xà phòng dịu nhẹ.\n3. Bôi kem dưỡng ẩm không hương liệu để làm dịu da.\n4. Nếu ngứa nhiều, bạn có thể sử dụng kem chứa corticosteroid nhẹ (nếu có sẵn, theo chỉ định của dược sĩ).",
+        "action": None
+    },
+    "Cảm ơn bạn!": {
+        "response": "Rất vui vì tôi có thể giúp bạn! Hãy theo dõi tình trạng của mình và chúc bạn sớm khỏe lại!",
         "action": None
     }
 }
