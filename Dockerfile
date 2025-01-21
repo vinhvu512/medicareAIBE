@@ -26,8 +26,8 @@ RUN pip install -r requirements.txt
 COPY . .
 
 # Expose the port the app runs on
-EXPOSE 80
+EXPOSE 8000
 
 # Define the default command to run the application
 # Adjust this command based on your framework (e.g., FastAPI with Uvicorn)
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "agent.main:app", "--host", "0.0.0.0", "--port", "8000"]
