@@ -31,6 +31,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from apis.authenticate.authenticate import get_current_user
 from models.user import User
 
+import time
+
 
 
 # Cấu hình logging
@@ -242,7 +244,7 @@ script_responses = {
     }
 }
 
-def get_script_match(query: str, threshold=0.8):
+def get_script_match(query: str, threshold=0.0):
     max_ratio = 0
     matched_script = None
     
@@ -471,7 +473,7 @@ async def chat_agent(
 
     agent = await get_or_create_agent(current_user.user_id, agent_id)
 
-
+    time.sleep(2)
 
     try:
         # Dummy chat
