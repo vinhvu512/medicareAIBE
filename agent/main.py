@@ -22,7 +22,7 @@ import nest_asyncio
 nest_asyncio.apply()
 
 import httpx
-
+import time
 # Import các dịch vụ
 
 import sys
@@ -470,7 +470,7 @@ async def chat_agent(
         )
 
     agent = await get_or_create_agent(current_user.user_id, agent_id)
-
+    time.sleep(2)
 
 
     try:
