@@ -1,5 +1,5 @@
 
-from fastapi import FastAPI, WebSocket, Depends, HTTPException, status, Request, Form
+from fastapi import FastAPI, WebSocket, Depends, HTTPException, status, Request, Form, File, UploadFile
 from fastapi.security import OAuth2PasswordBearer 
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +10,8 @@ import logging
 import json
 from datetime import datetime
 import asyncio
+from deepgram import DeepgramClient, PrerecordedOptions, FileSource
+
 
 from geminiagent.agent_service import AgentService
 from traffic_service import check_traffic
@@ -84,6 +86,16 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+
+from deepgram import Deepgram
+
+# Initialize Deepgram Client
+DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
+if not DEEPGRAM_API_KEY:
+    raise ValueError("DEEPGRAM_API_KEY environment variable is not set")
+  
+deepgram = DeepgramClient()
+
 async def first_route_tool(user_id: str):
     try:
         url = "https://api.mapbox.com/directions/v5/mapbox/driving/106.658339,10.770304;106.648938,10.795434;106.63777,10.801162"
@@ -144,7 +156,7 @@ async def new_route_tool(user_id: str):
                 }),
                 user_id
             )
-            print(f"Sent route data to user {user_id}")
+            # print(f"Sent route data to user {user_id}")
     except Exception as e:
         logging.error(f"Error in sample_tool: {str(e)}")
         await manager.send_personal_message(
@@ -289,6 +301,54 @@ async def websocket_endpoint(websocket: WebSocket, user_id: int):
     finally:
         manager.disconnect(websocket, user_id)
 
+@app.post("/speech-to-text")
+async def speech_to_text(file: UploadFile = File(...)):
+    try:
+        # Đọc file audio từ upload
+        audio_bytes = await file.read()
+
+        # Chuẩn bị payload và options
+        payload: FileSource = {"buffer": audio_bytes}
+        options = PrerecordedOptions(
+            model="nova-2",        # Hoặc mô hình phù hợp
+            language="vi",         # Tiếng Việt
+            smart_format=True,     # Định dạng thông minh
+        )
+
+        file_response = deepgram.listen.rest.v("1").transcribe_file(payload, options)
+        response_dict = file_response.to_dict()
+
+        # Extract main transcript and metadata
+        channel = response_dict.get('results', {}).get('channels', [])[0]
+        alternative = channel.get('alternatives', [])[0]
+        transcript = alternative.get('transcript', '')
+        confidence = alternative.get('confidence', 0)
+        duration = response_dict.get('metadata', {}).get('duration', 0)
+        
+        # Extract word-level details
+        words = [{
+            'word': w.get('punctuated_word', ''),
+            'start': w.get('start', 0),
+            'end': w.get('end', 0),
+            'confidence': w.get('confidence', 0)
+        } for w in alternative.get('words', [])]
+
+        return {
+            "text": transcript,
+            "confidence": confidence,
+            "duration": duration,
+            "words": words
+        }
+
+    except Exception as e:
+        print(f"Error in speech_to_text: {str(e)}")
+        return {
+            "text": "",
+            "confidence": 0,
+            "duration": 0,
+            "words": []
+        }
+
 # Đặt base prompt cho agent theo user và agent_id
 # main.py
 
@@ -373,6 +433,7 @@ async def chat_agent(
         token: str = Depends(oauth2_scheme)
 ):
     # Kiểm tra agent_id hợp lệ
+    print(request.query)
     if agent_id not in [1, 2, 3]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
