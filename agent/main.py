@@ -174,12 +174,12 @@ async def send_report_tool(self):
         async with httpx.AsyncClient() as client:
             response = await client.post("http://localhost:80/api/appointments", json={
                 "hospital_id": 35,
-                "department_id": 35,
-                "room_id": 34,
-                "doctor_id": 83,
-                "patient_id": 5,
-                "appointment_day": "2025-01-22",
-                "appointment_shift": 1,
+                "department_id": 36,
+                "room_id": 39,
+                "doctor_id": 88,
+                "patient_id": 20,
+                "appointment_day": "2025-01-24",
+                "appointment_shift": 2,
                 "reason": "General checkup",
                 "status": "Scheduled"
             })
@@ -214,12 +214,12 @@ script_responses = {
     },
 
     # Module 2: Hospital appointment and diagnosis
-    "Tôi muốn đặt lịch hẹn với bác sĩ Nguyễn Văn Thành ở bệnh viện Trưng Vương": {
+    "Tôi muốn đặt lịch hẹn với bác sĩ Nguyễn Thị Lan ở bệnh viện Trưng Vương": {
         "response": "Bạn có thể cho tôi biết ngày và giờ bạn muốn đặt lịch hẹn không?",
         "action": None
     },
     "Tôi muốn khám lúc tám giờ ngày mai": {
-        "response": "Lịch hẹn của bạn đã được đặt với bác sĩ Nguyễn Văn Thành vào lúc 8h ngày 22/01/2024. Sau đây, để có thể chuẩn đoán sơ bộ, bạn có thể cho tôi biết các triệu chứng của bạn được không?",
+        "response": "Lịch hẹn của bạn đã được đặt với bác sĩ Nguyễn Thị Lan vào lúc 8h ngày 24/01/2024. Sau đây, để có thể chuẩn đoán sơ bộ, bạn có thể cho tôi biết các triệu chứng của bạn được không?",
         "action": None
     },
     "Tôi thấy ngứa và đỏ da ở cổ tay, da hơi khô và tróc vảy.": {
