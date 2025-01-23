@@ -32,7 +32,59 @@ class DoctorUserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+@router.get("/sample", response_model=List[DoctorUserResponse])
+async def get_sample_doctors(
+    db: Session = Depends(get_db)
+):
+    """
+    Get a sample list of doctors with IDs from 83 to 87.
+    Returns basic doctor information including fullname and specialty.
+    """
+    try:
+        doctors = db.query(Doctor)\
+            .options(joinedload(Doctor.user))\
+            .filter(Doctor.doctor_id.between(83, 87))\
+            .all()
 
+        if not doctors:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": "No sample doctors found",
+                    "code": 404
+                }
+            )
+
+        doctor_list = []
+        for doctor in doctors:
+            doctor_data = {
+                "user_id": doctor.user.user_id,
+                "username": doctor.user.username,
+                "email": doctor.user.email,
+                "user_type": doctor.user.user_type,
+                "fullname": doctor.user.fullname,
+                "date_of_birth": doctor.user.date_of_birth,
+                "gender": doctor.user.gender,
+                "address": doctor.user.address,
+                "phone": doctor.user.phone,
+                "profile_image": doctor.user.profile_image,
+                "doctor_specialty": doctor.doctor_specialty,
+                "doctor_experience": doctor.doctor_experience
+            }
+            doctor_list.append(doctor_data)
+
+        return doctor_list
+
+    except HTTPException as http_ex:
+        raise http_ex
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": f"Error fetching sample doctors: {str(e)}",
+                "code": 500
+            }
+        )
 @router.get("/search", response_model=List[DoctorUserResponse])
 async def get_doctors_by_department(
     hospital_id: int = Query(..., description="Hospital ID"),
@@ -222,3 +274,5 @@ async def get_doctor_by_id(
                 "code": 500
             }
         )
+
+
